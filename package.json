@@ -1,0 +1,26 @@
+{
+  "name": "ts-test",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "re:build": "bsb -make-world -clean-world",
+    "re:watch": "bsb -make-world -clean-world -w",
+    "watch": "tsc -w",
+    "run": "node -r esm src/index.js"
+  },
+  "keywords": [],
+  "author": "Simon Wimmer",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^14.14.22",
+    "bs-platform": "^8.4.2",
+    "gentype": "^3.42.0",
+    "typescript": "^4.1.3"
+  },
+  "dependencies": {
+    "esm": "^3.2.25"
+  }
+}
