@@ -30,6 +30,7 @@ const n1 = node2(5)
 const n2 = node2(4, n1)
 const n3 = node2(3, n1, n2)
 const t1 = node2(1, node2(2), n3)
+const t2 = t1
 
 const inorder: <T>(t: tree<T>) => T[] = (t) => {
     if (t == leaf) {
