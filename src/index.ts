@@ -1,9 +1,8 @@
 // import { result } from './compile.js'
-import { delint } from './linter'
 import { filter } from './filterAst'
 import { readFileSync } from "fs";
 import * as ts from "typescript";
-import { doIt, pprintExpr } from "./test.gen"
+import { doIt, pprintExpr } from "./Test.gen"
 
 // console.log(JSON.stringify(result));
 console.log("Hi")
