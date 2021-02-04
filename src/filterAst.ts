@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import { expr } from './ast.gen'
+import { expr, mkApp, mkNull, mkNumber, mkUndefined, mkVar, mkVarDecl } from './Ast.gen'
 
 export function filter(sourceFile: ts.SourceFile): expr[] {
     // console.log(sourceFile)
@@ -53,16 +53,19 @@ export function filter(sourceFile: ts.SourceFile): expr[] {
                 return filterCallExpression(node as ts.CallExpression)
 
             case ts.SyntaxKind.NullKeyword:
-                return "Null"
+                return mkNull
 
             case ts.SyntaxKind.Identifier:
                 return filterIdentifier(node as ts.Identifier)
+
+            case ts.SyntaxKind.NumericLiteral:
+                return filterNumericLiteral(node as ts.NumericLiteral)
 
             // default:
             //     console.log("Unsupported AST element!", node)
         }
 
-        return "Undefined"
+        return mkUndefined
 
         // const results = <(object | undefined)[]>[]
         // ts.forEachChild(node, filterAndCollect(results))
@@ -71,10 +74,12 @@ export function filter(sourceFile: ts.SourceFile): expr[] {
 
     function filterIdentifier(node: ts.Identifier): expr {
         const name: string = (node.escapedText as string)
-        return {
-            tag: "Var",
-            value: name
-        }
+        return mkVar(name)
+    }
+
+    function filterNumericLiteral(node: ts.NumericLiteral): expr {
+        const num = parseFloat(node.getText())
+        return mkNumber(num)
     }
 
     function filterVariableStatement(node: ts.VariableStatement): expr {
@@ -95,17 +100,17 @@ export function filter(sourceFile: ts.SourceFile): expr[] {
         const initializer = declaration.initializer
         if (initializer === undefined) {
             console.error("Variable Declaration needs assignment!")
-            return "Undefined"
+            return mkUndefined
         }
         if (identifier.kind !== ts.SyntaxKind.Identifier) {
             console.error("Pattern assignment not supported!")
         }
         const name: string = ((identifier as ts.Identifier).escapedText as string)
-        const initializerResult = filterAst(initializer)
-        return {
-            tag: "VarDecl",
-            value: [name, initializerResult]
+        if (name === undefined) {
+            console.log("Warning: undefined")
         }
+        const initializerResult = filterAst(initializer)
+        return mkVarDecl(name, initializerResult)
     }
 
     function filterCallExpression(node: ts.CallExpression): expr {
@@ -113,10 +118,7 @@ export function filter(sourceFile: ts.SourceFile): expr[] {
         const args = node.arguments
         const expressionResult = filterAst(expression)
         const argsResults = args.map(filterAst)
-        return {
-            tag: "App",
-            value: [expressionResult, argsResults]
-        }
+        return mkApp(expressionResult, argsResults)
     }
 
     function report(node: ts.Node, message: string) {

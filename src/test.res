@@ -9,3 +9,5 @@ export doIt = n => {
   Js.log("Hey, here is a number!")
   Js.log(fib(n))
 }
+
+export pprintExpr = Pprint.print_expr
