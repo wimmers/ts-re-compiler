@@ -1,12 +1,7 @@
-// import { result } from './compile.js'
 import { filter } from './filterAst'
+import { pprintExpr } from "./OCamlModules.gen"
 import { readFileSync } from "fs";
 import * as ts from "typescript";
-import { doIt, pprintExpr } from "./Test.gen"
-
-// console.log(JSON.stringify(result));
-console.log("Hi")
-doIt(5)
 
 export const sum = (a: number, b: number) => {
   if ('development' === process.env.NODE_ENV) {
