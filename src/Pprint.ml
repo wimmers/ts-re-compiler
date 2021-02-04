@@ -52,7 +52,7 @@ function
         pprint_block ppf body;
         kwd ";";
     close_box ()
-(* | Arrow(params, body) ->
+| Arrow(params, body) ->
     open_hovbox 2;
         kwd "(";
         open_hovbox 1;
@@ -63,7 +63,7 @@ function
         kwd "=>";
         print_space ();
         pprint_block ppf body;
-    close_box () *)
+    close_box ()
 | String(string) -> kwd "\""; ident string; kwd "\""
 | App(e, args) ->
     pprint_expr ppf e;
