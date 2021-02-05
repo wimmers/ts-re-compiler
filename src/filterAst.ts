@@ -3,12 +3,11 @@ import {
     expr, parameter, block,
     mkApp, mkNull, mkNumber, mkUndefined, mkVar, mkVarDecl, mkParameter1, mkParameter2,
     mkFunctionDecl, mkBlock,
-    mkReturn1, mkReturn2, mkObjLit, mkArrayLit, mkSpread, mkIf1, mkIf2, mkBinop, mkArrow, binop
+    mkReturn1, mkReturn2, mkObjLit, mkArrayLit, mkSpread, mkIf1, mkIf2, mkBinop, mkArrow, binop,
+    mkObjectBindingPattern, mkArrayBindingPattern
 } from './Ast.gen'
 
 export function filter(sourceFile: ts.SourceFile): expr[] {
-    // console.log(sourceFile)
-    // filterAst(sourceFile);
 
     function filterParameter(node: ts.Node): parameter {
         if (node.kind !== ts.SyntaxKind.Parameter && node.kind !== ts.SyntaxKind.PropertyAssignment) {
@@ -96,8 +95,6 @@ export function filter(sourceFile: ts.SourceFile): expr[] {
             case ts.SyntaxKind.ArrowFunction:
                 return filterArrowFunction(node as ts.ArrowFunction)
 
-            // default:
-            //     console.log("Unsupported AST element!", node)
         }
 
         return mkUndefined
@@ -193,6 +190,17 @@ export function filter(sourceFile: ts.SourceFile): expr[] {
         return mkArrow(parameters, body)
     }
 
+    function getPatternBinders(binders: ts.NodeArray<ts.Node>): string[] {
+        return binders.map((node) => {
+            if (node.kind !== ts.SyntaxKind.BindingElement) {
+                throw `Unknown binder: ${node.getText()}`
+            }
+            const binder = node as ts.BindingElement
+            return (binder.name as ts.Identifier).escapedText as string
+        }
+        )
+    }
+
     function filterVariableStatement(node: ts.VariableStatement): expr {
         const varStatement: ts.VariableStatement = (node as ts.VariableStatement)
         const declarationList = varStatement.declarationList
@@ -201,7 +209,6 @@ export function filter(sourceFile: ts.SourceFile): expr[] {
             console.error("Multi-declarations are not supported")
         }
         if (declarationList.flags & ts.NodeFlags.Const) {
-
         }
         else {
             console.error("Unsupported variable declaration keyword!", node.getText(sourceFile))
@@ -213,15 +220,22 @@ export function filter(sourceFile: ts.SourceFile): expr[] {
             console.error("Variable Declaration needs assignment!")
             return mkUndefined
         }
-        if (identifier.kind !== ts.SyntaxKind.Identifier) {
-            console.error("Pattern assignment not supported!")
-        }
-        const name: string = ((identifier as ts.Identifier).escapedText as string)
-        if (name === undefined) {
-            console.log("Warning: undefined")
-        }
         const initializerResult = filterAst(initializer)
-        return mkVarDecl(name, initializerResult)
+        switch (identifier.kind) {
+            case ts.SyntaxKind.Identifier:
+                const name: string = ((identifier as ts.Identifier).escapedText as string)
+                return mkVarDecl(name, initializerResult)
+            case ts.SyntaxKind.ObjectBindingPattern:
+                const objPattern = identifier as ts.ObjectBindingPattern
+                const objBinders = getPatternBinders(objPattern.elements)
+                return mkObjectBindingPattern(objBinders, initializerResult)
+            case ts.SyntaxKind.ArrayBindingPattern:
+                const arrPattern = identifier as ts.ArrayBindingPattern
+                const arrBinders = getPatternBinders(arrPattern.elements)
+                return mkArrayBindingPattern(arrBinders, initializerResult)
+            default:
+                throw `Pattern assignment not supported: ${node.getText()}`
+        }
     }
 
     function filterCallExpression(node: ts.CallExpression): expr {
