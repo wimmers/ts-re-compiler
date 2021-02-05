@@ -9,7 +9,7 @@
     "re:build": "bsb -make-world -clean-world",
     "re:watch": "bsb -make-world -clean-world -w",
     "watch": "tsc -w",
-    "run": "node -r esm src/index.js"
+    "run": "ESM_DISABLE_CACHE=1 node -r esm src/index.js"
   },
   "keywords": [],
   "author": "Simon Wimmer",
