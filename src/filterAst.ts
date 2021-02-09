@@ -43,7 +43,6 @@ export function filter(sourceFile: ts.SourceFile): block {
     }
 
     function filterAst(node: ts.Node): expr {
-        console.log(node.kind)
         switch (node.kind) {
             case ts.SyntaxKind.VariableStatement:
                 return filterVariableStatement(node as ts.VariableStatement)
