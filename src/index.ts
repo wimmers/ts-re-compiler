@@ -1,7 +1,14 @@
 import { filter } from './filterAst'
-import { pprintExpr } from "./OCamlModules.gen"
+import { block } from './Ast_t.gen';
+import { pprintBlock } from "./OCamlModules.gen"
+import * as OCamlModules from "./OCamlModules.gen"
 import { readFileSync } from "fs";
 import * as ts from "typescript";
+
+const serializeBlock: ((arg: block) => object) =
+  OCamlModules.serializeBlock as unknown as ((arg: block) => object)
+// const Ast_bs = require("./Ast_bs.bs.js")
+// const serializeBlock = Ast_bs.write_block
 
 export const sum = (a: number, b: number) => {
   if ('development' === process.env.NODE_ENV) {
@@ -20,12 +27,9 @@ fileNames.forEach(fileName => {
     /*setParentNodes */ true
   );
 
-  // delint it
-  // delint(sourceFile);
-
-  const results = filter(sourceFile)
-  for (const result of results) {
-    const printedExpr = pprintExpr(result)
-    console.log(printedExpr)
-  }
+  const result = filter(sourceFile)
+  const printedBlock = pprintBlock(result)
+  console.log("Printed", printedBlock)
+  const serializedBlock = serializeBlock(result)
+  console.log("Serialized", serializedBlock)
 });

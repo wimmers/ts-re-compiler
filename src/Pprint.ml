@@ -1,4 +1,4 @@
-open Ast;;
+open Ast_t;;
 open Format;;
 
 let ident = pp_print_string
@@ -167,8 +167,12 @@ and pprint_parameter ppf = function
         pp_print_space ppf ();
         pprint_expr ppf init
 
-let print_expr e =
+let print_it ppf x =
     pp_set_margin str_formatter 81;
-    (hovbox pprint_expr) str_formatter e;
+    (hovbox ppf) str_formatter x;
     pp_print_newline str_formatter ();
     flush_str_formatter
+
+let print_expr = print_it pprint_expr
+
+let print_block = print_it pprint_block

@@ -1,13 +1,13 @@
 import * as ts from "typescript";
+import { expr, parameter, block, binop } from './Ast_t.gen';
 import {
-    expr, parameter, block,
     mkApp, mkNull, mkNumber, mkUndefined, mkVar, mkVarDecl, mkParameter1, mkParameter2,
     mkFunctionDecl, mkBlock,
-    mkReturn1, mkReturn2, mkObjLit, mkArrayLit, mkSpread, mkIf1, mkIf2, mkBinop, mkArrow, binop,
+    mkReturn1, mkReturn2, mkObjLit, mkArrayLit, mkSpread, mkIf1, mkIf2, mkBinop, mkArrow,
     mkObjectBindingPattern, mkArrayBindingPattern
-} from './Ast.gen'
+} from './Ast.gen';
 
-export function filter(sourceFile: ts.SourceFile): expr[] {
+export function filter(sourceFile: ts.SourceFile): block {
 
     function filterParameter(node: ts.Node): parameter {
         if (node.kind !== ts.SyntaxKind.Parameter && node.kind !== ts.SyntaxKind.PropertyAssignment) {
@@ -25,10 +25,10 @@ export function filter(sourceFile: ts.SourceFile): expr[] {
     }
 
     function filterBlock(node: ts.Node): block {
-        if (node.kind !== ts.SyntaxKind.Block) {
+        if (node.kind !== ts.SyntaxKind.Block && node.kind !== ts.SyntaxKind.SourceFile) {
             throw `Not a block: ${node}`
         }
-        const block = (node as ts.Block)
+        const block = (node as ts.BlockLike)
         const exprs = block.statements.map(filterAst)
         return mkBlock(exprs)
     }
@@ -43,19 +43,8 @@ export function filter(sourceFile: ts.SourceFile): expr[] {
     }
 
     function filterAst(node: ts.Node): expr {
+        console.log(node.kind)
         switch (node.kind) {
-            case ts.SyntaxKind.ForStatement:
-            case ts.SyntaxKind.ForInStatement:
-            case ts.SyntaxKind.WhileStatement:
-            case ts.SyntaxKind.DoStatement:
-                if ((node as ts.IterationStatement).statement.kind !== ts.SyntaxKind.Block) {
-                    report(
-                        node,
-                        'A looping statement\'s contents should be wrapped in a block body.'
-                    );
-                }
-                break;
-
             case ts.SyntaxKind.VariableStatement:
                 return filterVariableStatement(node as ts.VariableStatement)
 
@@ -98,10 +87,6 @@ export function filter(sourceFile: ts.SourceFile): expr[] {
         }
 
         return mkUndefined
-
-        // const results = <(object | undefined)[]>[]
-        // ts.forEachChild(node, filterAndCollect(results))
-        // ts.forEachChild(node, filterAst);
     }
 
     function filterIdentifier(node: ts.Identifier): expr {
@@ -246,21 +231,5 @@ export function filter(sourceFile: ts.SourceFile): expr[] {
         return mkApp(expressionResult, argsResults)
     }
 
-    function report(node: ts.Node, message: string) {
-        const { line, character } = sourceFile.getLineAndCharacterOfPosition(node.getStart());
-        console.log(`${sourceFile.fileName} (${line + 1},${character + 1}): ${message}`);
-    }
-
-    function filterAndCollect(arr: (expr)[]) {
-        function doIt(node: ts.Node): void {
-            arr.push(filterAst(node))
-        }
-        return doIt
-    }
-
-    const results = <expr[]>[]
-
-    ts.forEachChild(sourceFile, filterAndCollect(results))
-
-    return results
+    return filterBlock(sourceFile)
 }

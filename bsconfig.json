@@ -17,8 +17,10 @@
     ],
     "suffix": ".bs.js",
     "namespace": true,
-    "bs-dependencies": [],
-    "ppx-flags": [],
+    "bs-dependencies": [
+        "@glennsl/bs-json",
+        "@ahrefs/bs-atdgen-codec-runtime"
+    ],
     "refmt": 3,
     "gentypeconfig": {
         "language": "typescript",

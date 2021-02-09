@@ -21,6 +21,8 @@
     "typescript": "^4.1.3"
   },
   "dependencies": {
+    "@ahrefs/bs-atdgen-codec-runtime": "^2.0.1",
+    "@glennsl/bs-json": "^5.0.2",
     "esm": "^3.2.25"
   }
 }

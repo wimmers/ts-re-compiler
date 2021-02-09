@@ -1,57 +1,24 @@
-@gentype
-type binop =
-  | Eq2
-  | Eq3
-  | Neq2
-  | Neq3
-  | Times
-  | Plus
-  | Minus
-  | Div
+export mkVarDecl = (s, e) => Ast_t.VarDecl(s, e)
+export mkVar = s => Ast_t.Var(s)
+export mkApp = (e, xs) => Ast_t.App(e, Array.to_list(xs))
+export mkNumber = x => Ast_t.Number(x)
+export mkString = x => Ast_t.String(x)
+export mkUndefined = Ast_t.Undefined
+export mkNull = Ast_t.Null
+export mkFunctionDecl = (s, ps, e) => Ast_t.FunctionDecl(s, Array.to_list(ps), e)
+export mkReturn1 = Ast_t.Return(None)
+export mkReturn2 = e => Ast_t.Return(Some(e))
+export mkObjLit = xs => Ast_t.ObjLit(Array.to_list(xs))
+export mkArrayLit = xs => Ast_t.ArrayLit(Array.to_list(xs))
+export mkSpread = e => Ast_t.Spread(e)
+export mkIf1 = (b, e) => Ast_t.If(b, e, None)
+export mkIf2 = (b, e1, e2) => Ast_t.If(b, e1, e2)
+export mkBinop = (op, e1, e2) => Ast_t.Binop(op, e1, e2)
+export mkArrow = (xs, block) => Ast_t.Arrow(Array.to_list(xs), block)
+export mkObjectBindingPattern = (xs, e) => Ast_t.VarObjectPatternDecl(Array.to_list(xs), e)
+export mkArrayBindingPattern = (xs, e) => Ast_t.VarArrayPatternDecl(Array.to_list(xs), e)
 
-@gentype.opaque
-type rec expr =
-  | VarDecl(string, expr)
-  | Var(string)
-  | App(expr, list<expr>)
-  | Number(float)
-  | String(string)
-  | Undefined
-  | Null
-  | FunctionDecl(string, list<parameter>, block)
-  | Return(option<expr>)
-  | ObjLit(list<parameter>)
-  | ArrayLit(list<expr>)
-  | VarObjectPatternDecl(list<string>, expr)
-  | VarArrayPatternDecl(list<string>, expr)
-  | Spread(expr)
-  | If(expr, block, option<block>)
-  | Binop(binop, expr, expr)
-  | Arrow(list<parameter>, block)
-@gentype.opaque and parameter = Parameter(string, bool, option<expr>)
-@gentype.opaque and block = Block(list<expr>)
+export mkParameter1 = (s, b) => Ast_t.Parameter(s, b, None)
+export mkParameter2 = (s, b, e) => Ast_t.Parameter(s, b, Some(e))
 
-export mkVarDecl = (s, e) => VarDecl(s, e)
-export mkVar = s => Var(s)
-export mkApp = (e, xs) => App(e, Array.to_list(xs))
-export mkNumber = x => Number(x)
-export mkString = x => String(x)
-export mkUndefined = Undefined
-export mkNull = Null
-export mkFunctionDecl = (s, ps, e) => FunctionDecl(s, Array.to_list(ps), e)
-export mkReturn1 = Return(None)
-export mkReturn2 = e => Return(Some(e))
-export mkObjLit = xs => ObjLit(Array.to_list(xs))
-export mkArrayLit = xs => ArrayLit(Array.to_list(xs))
-export mkSpread = e => Spread(e)
-export mkIf1 = (b, e) => If(b, e, None)
-export mkIf2 = (b, e1, e2) => If(b, e1, e2)
-export mkBinop = (op, e1, e2) => Binop(op, e1, e2)
-export mkArrow = (xs, block) => Arrow(Array.to_list(xs), block)
-export mkObjectBindingPattern = (xs, e) => VarObjectPatternDecl(Array.to_list(xs), e)
-export mkArrayBindingPattern = (xs, e) => VarArrayPatternDecl(Array.to_list(xs), e)
-
-export mkParameter1 = (s, b) => Parameter(s, b, None)
-export mkParameter2 = (s, b, e) => Parameter(s, b, Some(e))
-
-export mkBlock = xs => Block(Array.to_list(xs))
+export mkBlock = xs => Ast_t.Block(Array.to_list(xs))
