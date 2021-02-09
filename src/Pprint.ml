@@ -144,7 +144,7 @@ function
     pprint_expr ppf e2
 | Null -> kwd "null"
 | Undefined -> kwd "undefined"
-| Number(n) -> kwd (Belt.Float.toString n)
+| Number(n) -> kwd (string_of_float n)
 | _ -> kwd "<>"
 and pprint_block ppf = function
 | Block(exprs) ->

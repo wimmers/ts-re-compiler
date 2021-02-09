@@ -17,6 +17,12 @@ npm install
 npm run re:build && npm run build
 ```
 
+Native build:
+
+```sh
+dune build src/read_ast.exe
+```
+
 ### Continuous Build
 
 ```sh
@@ -31,8 +37,14 @@ npm run watch
 
 ### Running
 
-```
+```sh
 npm run run src/examples/tree.ts
+```
+
+Run native:
+
+```sh
+_build/default/src/read_ast.exe src/examples/tree.ts.json
 ```
 
 ## Implementation Notes

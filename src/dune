@@ -1,0 +1,4 @@
+(executable
+ (name read_ast)
+ (libraries atdgen stdio)
+ )
