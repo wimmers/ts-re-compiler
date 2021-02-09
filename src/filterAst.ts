@@ -1,11 +1,11 @@
 import * as ts from "typescript";
-import { expr, parameter, block, binop } from './Ast_t.gen';
+import { expr, parameter, block, binop } from './tsast/Ast_t.gen';
 import {
     mkApp, mkNull, mkNumber, mkUndefined, mkVar, mkVarDecl, mkParameter1, mkParameter2,
     mkFunctionDecl, mkBlock,
     mkReturn1, mkReturn2, mkObjLit, mkArrayLit, mkSpread, mkIf1, mkIf2, mkBinop, mkArrow,
     mkObjectBindingPattern, mkArrayBindingPattern
-} from './Ast.gen';
+} from './tsast/Ast.gen';
 
 export function filter(sourceFile: ts.SourceFile): block {
 

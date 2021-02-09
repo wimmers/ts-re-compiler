@@ -1,7 +1,7 @@
 import { filter } from './filterAst'
-import { block } from './Ast_t.gen';
-import { pprintBlock } from "./OCamlModules.gen"
-import * as OCamlModules from "./OCamlModules.gen"
+import { block } from './tsast/Ast_t.gen';
+import { pprintBlock } from "./tsast/OCamlModules.gen"
+import * as OCamlModules from "./tsast/OCamlModules.gen"
 import * as fs from "fs";
 import * as ts from "typescript";
 

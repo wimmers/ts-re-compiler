@@ -5,8 +5,11 @@
     ],
     "sources": [
         {
+            "dir": "src/tsast"
+        },
+        {
             "dir": "src",
-            "subdirs": true
+            "subdirs": false
         }
     ],
     "package-specs": [

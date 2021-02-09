@@ -1,9 +1,9 @@
 ####{BSB GENERATED: NO EDIT
 B lib/bs
 FLG -open TsTest
-FLG -ppx '/Users/wimmers/.nvm/versions/node/v12.19.0/lib/node_modules/bs-platform/darwin/bsc.exe -as-ppx '
-S /Users/wimmers/.nvm/versions/node/v12.19.0/lib/node_modules/bs-platform/lib/ocaml
-B /Users/wimmers/.nvm/versions/node/v12.19.0/lib/node_modules/bs-platform/lib/ocaml
+FLG -ppx '/Users/wimmers/Code/ts-re-compiler/node_modules/bs-platform/darwin/bsc.exe -as-ppx '
+S /Users/wimmers/Code/ts-re-compiler/node_modules/bs-platform/lib/ocaml
+B /Users/wimmers/Code/ts-re-compiler/node_modules/bs-platform/lib/ocaml
 FLG -w +a-4-9-20-40-41-42-50-61-102
 S /Users/wimmers/Code/ts-re-compiler/node_modules/@glennsl/bs-json/lib/ocaml
 B /Users/wimmers/Code/ts-re-compiler/node_modules/@glennsl/bs-json/lib/ocaml
@@ -11,5 +11,7 @@ S /Users/wimmers/Code/ts-re-compiler/node_modules/@ahrefs/bs-atdgen-codec-runtim
 B /Users/wimmers/Code/ts-re-compiler/node_modules/@ahrefs/bs-atdgen-codec-runtime/lib/ocaml
 S src
 B lib/bs/src
+S src/tsast
+B lib/bs/src/tsast
 ####BSB GENERATED: NO EDIT}
 PKG atdgen stdio

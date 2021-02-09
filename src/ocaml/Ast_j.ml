@@ -1,6 +1,8 @@
 (* Auto-generated from "Ast.atd" *)
 [@@@ocaml.warning "-27-32-35-39"]
 
+open Tsast
+
 type binop = Ast_t.binop = 
     Eq2 | Eq3 | Neq2 | Neq3 | Times | Plus | Minus | Div
 
