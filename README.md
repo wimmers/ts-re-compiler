@@ -11,6 +11,12 @@ We use `genType` to generate TS type declarations from ReScript.
 npm install
 ```
 
+Native:
+```
+opam switch create 4.11.1
+opam install base stdio dune ocaml-lsp-server atdgen
+```
+
 ### Building
 
 ```sh
@@ -63,6 +69,13 @@ atdgen -bs tsast/Ast.atd
 ```
 Note that `@[gentype]` and `@[gentype.opaque]` need to be added manually to `src/tsast/Ast_t.mli` after re-generating.
 The same goes for `open Tsast`.
+
+## Usage Notes
+
+I have not yet figured how to let this multi-project setup play nicely with Merlin.
+If one deletes the `.merlin` file at the root, then it works nicely for all the OCaml files.
+Otherwise, it will not find the local libraries.
+However, the `.merlin` file is probably needed to get all features for ReScript files.
 
 ## Setup Notes
 
