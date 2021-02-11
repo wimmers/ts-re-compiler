@@ -4,7 +4,7 @@ open Base;;
 
 let (|>) v f = f v
 
-class ['a,'b] ast_transformer = object(self)
+class ['b,'a] ast_transformer = object(self)
 
   method expr (down: 'b) (acc: 'a) = function
   | VarDecl(s, e) ->
@@ -39,6 +39,12 @@ class ['a,'b] ast_transformer = object(self)
     let (acc1, e11) = self#expr down acc e1 in
     let (acc2, e22) = self#expr down acc1 e2 in
     (acc2, Binop(op, e11, e22))
+  | Return(Some e) ->
+    let (acc1, e1) = self#expr down acc e in
+    (acc1, Return(Some e1))
+  | Spread(e) ->
+    let (acc1, e1) = self#expr down acc e in
+    (acc1, Spread(e1))
   | e -> ((acc, e): ('a * expr))
 
   method block (down: 'b) (acc: 'a) = function
@@ -118,18 +124,81 @@ let lift b =
   let (_, tab) = the_lifter#block ("#top", []) b in
   tab
 
+let get_parameter_var = function
+  Parameter (s, _, _) -> s
+
+let get_parameter_vars = List.map ~f:get_parameter_var
+
+class free_vars_computer = object(self)
+  inherit [string list, string list] ast_transformer as super
+
+  val add_bounds = fun bounds -> function
+  | VarDecl (s, _) -> s :: bounds
+  | FunctionDecl (s, _, _) -> s :: bounds
+  | VarObjectPatternDecl (xs, _) -> xs @ bounds
+  | VarArrayPatternDecl (xs, _) -> xs @ bounds
+  | _ -> bounds
+
+  method! expr bounds frees = function
+  | Var (s) as e ->
+    let frees1 = if List.mem bounds s ~equal:String.equal then frees else s :: frees in
+    (frees1, e)
+  | e -> super#expr bounds frees e
+
+  method! func bounds frees params b =
+    let ps = get_parameter_vars params in
+    let (frees1, _) = List.fold_map ~f:(self#parameter frees) ~init:frees params in
+    let (frees2, _) = self#block (ps @ bounds) frees1 b in
+    (frees2, params, b)
+
+  method! block bounds frees = function
+  | Block blocks as b ->
+    let folder (bounds, frees) e =
+      let bounds1 = add_bounds bounds e
+      and (frees1, _) = self#expr bounds frees e in
+      (bounds1, frees1)
+    in
+    let (_bounds1, frees1) = List.fold ~f:folder ~init:(bounds, frees) blocks in
+    (frees1, b)
+
+end
+
+let the_free_vars_computer = new free_vars_computer
+
+let free_vars e =
+  let (frees, _) = the_free_vars_computer#expr [] [] e in
+  List.dedup_and_sort ~compare:(String.compare) frees
+
+let make_params = List.map ~f:(fun p -> Parameter(p, false, None))
 class lifter2 = object
-  inherit [(string * parameter list * block) list, string] ast_transformer as super
+  inherit [string, (string * parameter list * block) list] ast_transformer as super
 
   method! func name acc params b =
     super#func name ((name, params, b) :: acc) params b
 
+  val make_partial = fun (s, params_0, params_ext) ->
+    let ps = get_parameter_vars params_0 in
+    let args = List.map ~f:(fun v -> Var (v)) (params_ext @ ps) in
+    Arrow(params_0, Block [App(Var(s), args)])
+
   method! expr name acc = function
   | VarDecl (s, _) as e0 -> super#expr (name ^ "_" ^ s) acc e0
-  | FunctionDecl(s, _params, _b) as e0 ->
+  | Arrow (params, b) as e0 ->
+    let (acc1, params1, b1) = super#func name acc params b in
+    let frees = free_vars e0 in
+    let () = Util.print_string_list frees in
+    let new_params = make_params frees @ params1 in
+    let e1 = make_partial (name, params, frees)
+    and acc2 = (name, new_params, b1) :: acc1 in
+    (acc2, e1)
+  | FunctionDecl(s, params, b) as e0 ->
     let name1 = name ^ "_" ^ s in
-    (* super#expr name1 ((name1, params, b) :: acc) e0 *)
-    super#expr name1 acc e0
+    let (acc1, params1, b1) = super#func name1 acc params b in
+    let frees = free_vars e0 in
+    let new_params = make_params frees @ params1 in
+    let e1 = VarDecl (s, make_partial (name1, params, frees))
+    and acc2 = (name1, new_params, b1) :: acc1 in
+    (acc2, e1)
   | e -> super#expr name acc e
 end
 

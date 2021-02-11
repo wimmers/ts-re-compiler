@@ -31,4 +31,4 @@ let () =
     print_endline (Pprint.print_expr (Ast_t.FunctionDecl (s, params, block)) ())
     ) tab1;
   printf "\nNew program:\n\n";
-  print_endline (Pprint.print_block program ())
+  print_endline (Pprint.print_block b1 ())
