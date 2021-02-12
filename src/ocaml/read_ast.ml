@@ -15,18 +15,22 @@ let program = Ast_j.block_of_string in_text
 
 let out_text = Pprint.print_block program ()
 
-let (tab1, b1) = LambdaLifting.lift program
+let b0 = LambdaLifting.fold_const_arrows program
+
+let (tab1, b1) = LambdaLifting.lift b0
 
 let b2 = LambdaLifting.propagate_fun_bindings b1
 
 let () =
   print_endline "Input:\n";
   print_endline out_text;
+  printf "\nProgram after const-arrow folding:\n\n";
+  print_endline (Pprint.print_block b0 ());
   printf "\nExtracted %d function definitions:\n\n" (List.length tab1);
   List.iter (fun (s, params, block) ->
     print_endline (Pprint.print_expr (Ast_t.FunctionDecl (s, params, block)) ())
     ) tab1;
-  printf "\nNew program:\n\n";
+  printf "\nProgram after lambda lifting:\n\n";
   print_endline (Pprint.print_block b1 ());
   printf "\nProgram after constant propagation:\n\n";
   print_endline (Pprint.print_block b2 ());

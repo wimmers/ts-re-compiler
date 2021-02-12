@@ -3,11 +3,41 @@ open Ast_t;;
 open AstTransformers;;
 open Base;;
 
+(* 
+ * Folds declarations of the form
+ *   const f = (params) => { body }
+ * into
+ *   function f(params) => { body } .
+ * We use this in an attempt to preserve the recursive structure of functions.
+ *)
+class const_arrow_folder = object
+  inherit [unit, unit] ast_transformer as super
+
+  method! expr () () = function
+  | VarDecl(f, Arrow(params, body)) ->  ((), FunctionDecl(f, params, body))
+  | e -> super#expr () () e
+
+end
+
+let fold_const_arrows =
+  let the_folder = new const_arrow_folder in
+  fun b ->
+    let ((), b1) = the_folder#block () () b in
+    b1
+
+
 let get_parameter_var = function
   Parameter (s, _, _) -> s
 
 let get_parameter_vars = List.map ~f:get_parameter_var
 
+let is_function_decl = function
+| FunctionDecl _ -> true
+| _ -> false
+
+(*
+ * Compute the free variables of an expression.
+ *)
 class free_vars_computer = object(self)
   inherit [string list, string list] ast_transformer as super
 
@@ -22,6 +52,8 @@ class free_vars_computer = object(self)
   | Var (s) as e ->
     let frees1 = if List.mem bounds s ~equal:String.equal then frees else s :: frees in
     (frees1, e)
+  (* We assume that functions bind their name recursively, everything else not. *)
+  | FunctionDecl(s,_,_) as e -> super#expr (s :: bounds) frees e
   | e -> super#expr bounds frees e
 
   method! func bounds frees params b =
@@ -48,6 +80,19 @@ let free_vars e =
   let (frees, _) = the_free_vars_computer#expr [] [] e in
   List.dedup_and_sort ~compare:(String.compare) frees
 
+
+(*
+ * Lambda lifting, i.e. removing nested function definitions:
+ * - Identify all function definitions
+ * - Store them in a table with entries of the form
+ *   (<function name>, <parameter list>, <function body>)
+ * - For anonymous functions a name is invented
+ * - Any function name is prefixed with any name bindings encountered on the path from the root
+ * - Replace function defs
+ *     function f(args) = { body(context_vars) }
+ *   by constant declarations
+ *     const f = (args) => f_new(context_vars...args)
+ *)
 let make_params = List.map ~f:(fun p -> Parameter(p, false, None))
 class lifter = object
   inherit [string, (string * parameter list * block) list] ast_transformer as super
@@ -65,7 +110,6 @@ class lifter = object
   | Arrow (params, b) as e0 ->
     let (acc1, params1, b1) = super#func name acc params b in
     let frees = free_vars e0 in
-    let () = Util.print_string_list frees in
     let new_params = make_params frees @ params1 in
     let e1 = make_partial (name, params, frees)
     and acc2 = (name, new_params, b1) :: acc1 in
@@ -74,6 +118,7 @@ class lifter = object
     let name1 = name ^ "_" ^ s in
     let (acc1, params1, b1) = super#func name1 acc params b in
     let frees = free_vars e0 in
+    let () = Util.print_string_list frees in
     let new_params = make_params frees @ params1 in
     let e1 = VarDecl (s, make_partial (name1, params, frees))
     and acc2 = (name1, new_params, b1) :: acc1 in
@@ -89,9 +134,16 @@ let lift b =
 
 type func_tab = (string, parameter list * string * expr list, String.comparator_witness) Base.Map.t
 
+
 let pp_expr_list = Util.pp_list Pprint.pprint_expr
 let pp_parameter_list = Util.pp_list Pprint.pprint_parameter
 
+(*
+ * Constant propagation:
+ * Remove const-arrow declarations
+ *  const f = (args) => f_new(context_vars...args)
+ * and substitute f_new for f at call sites.
+*)
 class constant_propagater = object(self)
   inherit [func_tab, unit] ast_transformer as super
 
