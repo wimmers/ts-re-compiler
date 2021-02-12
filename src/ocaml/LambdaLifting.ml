@@ -207,3 +207,60 @@ let the_lifter2 = new lifter2
 let lift2 b =
   let (tab, b1) = the_lifter2#block "#top" [] b in
   (tab, b1)
+
+type func_tab = (string, parameter list * string * expr list, String.comparator_witness) Base.Map.t
+
+let pp_expr_list = Util.pp_list Pprint.pprint_expr
+let pp_parameter_list = Util.pp_list Pprint.pprint_parameter
+
+class constant_propagater = object(self)
+  inherit [func_tab, unit] ast_transformer as super
+
+  val subst_func_call = fun (params0, f, args) es ->
+    let num_params = List.length params0 in
+    if List.length es > num_params
+      then raise (Invalid_argument
+        (Caml.Format.asprintf "Parameter lists do not match! %s|%a|%a"
+          f pp_expr_list es pp_parameter_list params0 ))
+      else
+        let args_context = List.take args (List.length args - num_params) in
+        let args_all = args_context @ es in
+        App(Var(f), args_all)
+
+  (* Incomplete: nested arrows *)
+  method! expr func_tab () = function
+  | App(Var(x), es) as e0 -> (
+    match Map.find func_tab x with
+      None -> super#expr func_tab () e0
+    | Some(call) ->
+      let e1 = subst_func_call call es in
+      super#expr func_tab () e1
+    )
+  | e -> super#expr func_tab () e
+  
+  (* Incomplete: other stmts also generate bindings *)
+  val update_func_tab = fun tab -> function
+  | VarDecl(s, Arrow(params0, Block [App(Var(f), args)])) ->
+    (Map.set tab ~key:s ~data:(params0, f, args), true)
+  | VarDecl(s, _)  -> (Map.remove tab s, false)
+  | _ -> (tab, false)
+
+  method! block func_tab () = function
+  | Block blocks ->
+    let folder func_tab e =
+      let (func_tab1, remove) = update_func_tab func_tab e
+      and (), e1 = self#expr func_tab () e in
+      (func_tab1, if remove then None else Some e1)
+    in
+    let (_, blocks1_opt) = List.fold_map ~f:folder ~init:func_tab blocks in
+    let blocks1 = List.filter_opt blocks1_opt in
+    ((), Block blocks1)
+
+  end
+
+let the_constant_propagater = new constant_propagater
+
+let propagate_fun_bindings b =
+  let m = Map.empty (module String) in
+  let ((), b1) = the_constant_propagater#block m () b in
+  b1
