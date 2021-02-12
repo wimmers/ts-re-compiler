@@ -3,6 +3,73 @@ open Ast_t;;
 open AstTransformers;;
 open Base;;
 
+let add_bounds = fun bounds -> function
+  | VarDecl (s, _) -> s :: bounds
+  | FunctionDecl (s, _, _) -> s :: bounds
+  | VarObjectPatternDecl (xs, _) -> xs @ bounds
+  | VarArrayPatternDecl (xs, _) -> xs @ bounds
+  | _ -> bounds
+
+let invent_name bounds s =
+  let rec loop n =
+    let name = s ^ "$" ^ Int.to_string n in
+    if List.mem ~equal:(String.equal) bounds name then loop (n + 1) else name
+  in if List.mem ~equal:(String.equal) bounds s then Some (loop 0) else None
+
+let disambiguate_parameter (bounds, name_tab as arg) = function
+| Parameter (s, is_opt, e) as e0 -> (
+  match invent_name bounds s with
+  | None -> (arg, e0)
+  | Some s1 ->
+    let name_tab1 = Map.set name_tab ~key:s ~data:s1
+    and bounds1 = s1 :: bounds
+    in ((bounds1, name_tab1), Parameter (s1, is_opt, e))
+)
+
+type 'a string_tab = (string, 'a, String.comparator_witness) Base.Map.t
+
+(*
+ * Transforms functions such that function parameters do not capture bound variables.
+*)
+class parameter_disambiguater = object(self)
+  inherit [string list * string string_tab, unit] ast_transformer as super
+
+  (* Incomplete: nested arrows *)
+  method! expr (_, name_tab as down) () = function
+  | Var(s) as e -> (
+    match Map.find name_tab s with
+    | Some(s1) -> ((), Var(s1))
+    | None -> ((), e)
+  )
+  | e -> super#expr down () e
+
+  val disambiguate_parameters = fun arg params ->
+    List.fold_map params ~init:arg ~f:disambiguate_parameter
+
+  method! func arg () params b =
+    let arg1, params1 = disambiguate_parameters arg params in
+    super#func arg1 () params1 b
+
+  method! block (bounds, name_tab) () = function
+  | Block blocks ->
+    let folder bounds e =
+      let bounds1 = add_bounds bounds e in
+      (* We pass the new binding down immediately *)
+      let ((), e1) = self#expr (bounds1, name_tab) () e in
+      (bounds1, e1)
+    in
+    let (_, blocks1) = List.fold_map ~f:folder ~init:bounds blocks in
+    ((), Block blocks1)
+
+  end
+
+let the_parameter_disambiguater = new parameter_disambiguater
+
+let disambiguate_parameters block =
+  let ((), block1) = the_parameter_disambiguater#block ([], Map.empty(module String)) () block
+  in block1
+
+
 (* 
  * Folds declarations of the form
  *   const f = (params) => { body }
@@ -40,13 +107,6 @@ let is_function_decl = function
  *)
 class free_vars_computer = object(self)
   inherit [string list, string list] ast_transformer as super
-
-  val add_bounds = fun bounds -> function
-  | VarDecl (s, _) -> s :: bounds
-  | FunctionDecl (s, _, _) -> s :: bounds
-  | VarObjectPatternDecl (xs, _) -> xs @ bounds
-  | VarArrayPatternDecl (xs, _) -> xs @ bounds
-  | _ -> bounds
 
   method! expr bounds frees = function
   | Var (s) as e ->
@@ -155,6 +215,8 @@ let propagate_fun_bindings b =
  *     function f(args) = { body(context_vars) }
  *   by constant declarations
  *     const f = (args) => f_new(context_vars...args)
+ * - Propagate such a constant declaration (see propagate_fun_bindings)
+ * - Recurse until every function has been lifted
  *)
 let make_params = List.map ~f:(fun p -> Parameter(p, false, None))
 
