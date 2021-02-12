@@ -18,7 +18,14 @@ let binop op =
 in binop (match op with
 | Eq2 -> "=="
 | Eq3 -> "==="
-| _ -> "<...>")
+| Neq2 -> "!="
+| Neq3 -> "!=="
+| Plus -> "+"
+| Minus -> "-"
+| Div -> "/"
+| Times -> "*"
+(* | _ -> "<...>" *)
+)
 
 let rec pprint_expr (ppf: formatter) =
 let kwd = kwd ppf

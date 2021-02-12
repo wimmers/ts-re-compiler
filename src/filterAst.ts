@@ -106,6 +106,27 @@ export function filter(sourceFile: ts.SourceFile): block {
             case ts.SyntaxKind.EqualsEqualsToken:
                 binop = "Eq2"
                 break;
+            case ts.SyntaxKind.EqualsEqualsEqualsToken:
+                binop = "Eq3"
+                break;
+            case ts.SyntaxKind.ExclamationEqualsToken:
+                binop = "Neq2"
+                break;
+            case ts.SyntaxKind.ExclamationEqualsEqualsToken:
+                binop = "Neq3"
+                break;
+            case ts.SyntaxKind.PlusToken:
+                binop = "Plus"
+                break;
+            case ts.SyntaxKind.MinusToken:
+                binop = "Minus"
+                break;
+            case ts.SyntaxKind.SlashToken:
+                binop = "Div"
+                break;
+            case ts.SyntaxKind.AsteriskToken:
+                binop = "Times"
+                break;
             default:
                 throw `Unknown binary operator ${node.operatorToken}`;
         }
