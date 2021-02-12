@@ -15,19 +15,13 @@ let program = Ast_j.block_of_string in_text
 
 let out_text = Pprint.print_block program ()
 
-let tab = LambdaLifting.lift program
-
-let (tab1, b1) = LambdaLifting.lift2 program
+let (tab1, b1) = LambdaLifting.lift program
 
 let b2 = LambdaLifting.propagate_fun_bindings b1
 
 let () =
   print_endline "Input:\n";
   print_endline out_text;
-  (* printf "Extracted %d function definitions:\n\n" (List.length tab);
-  List.iter (fun (s, params, block) ->
-    print_endline (Pprint.print_expr (Ast_t.FunctionDecl (s, params, block)) ())
-    ) tab; *)
   printf "\nExtracted %d function definitions:\n\n" (List.length tab1);
   List.iter (fun (s, params, block) ->
     print_endline (Pprint.print_expr (Ast_t.FunctionDecl (s, params, block)) ())
