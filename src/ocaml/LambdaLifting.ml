@@ -76,73 +76,20 @@ end
 
 let the_free_vars_computer = new free_vars_computer
 
-let free_vars e =
-  let (frees, _) = the_free_vars_computer#expr [] [] e in
+let free_vars ?(bounds=[]) e =
+  let (frees, _) = the_free_vars_computer#expr bounds [] e in
   List.dedup_and_sort ~compare:(String.compare) frees
-
-
-(*
- * Lambda lifting, i.e. removing nested function definitions:
- * - Identify all function definitions
- * - Store them in a table with entries of the form
- *   (<function name>, <parameter list>, <function body>)
- * - For anonymous functions a name is invented
- * - Any function name is prefixed with any name bindings encountered on the path from the root
- * - Replace function defs
- *     function f(args) = { body(context_vars) }
- *   by constant declarations
- *     const f = (args) => f_new(context_vars...args)
- *)
-let make_params = List.map ~f:(fun p -> Parameter(p, false, None))
-class lifter = object
-  inherit [string, (string * parameter list * block) list] ast_transformer as super
-
-  method! func name acc params b =
-    super#func name ((name, params, b) :: acc) params b
-
-  val make_partial = fun (s, params_0, params_ext) ->
-    let ps = get_parameter_vars params_0 in
-    let args = List.map ~f:(fun v -> Var (v)) (params_ext @ ps) in
-    Arrow(params_0, Block [App(Var(s), args)])
-
-  method! expr name acc = function
-  | VarDecl (s, _) as e0 -> super#expr (name ^ "_" ^ s) acc e0
-  | Arrow (params, b) as e0 ->
-    let (acc1, params1, b1) = super#func name acc params b in
-    let frees = free_vars e0 in
-    let new_params = make_params frees @ params1 in
-    let e1 = make_partial (name, params, frees)
-    and acc2 = (name, new_params, b1) :: acc1 in
-    (acc2, e1)
-  | FunctionDecl(s, params, b) as e0 ->
-    let name1 = name ^ "_" ^ s in
-    let (acc1, params1, b1) = super#func name1 acc params b in
-    let frees = free_vars e0 in
-    let () = Util.print_string_list frees in
-    let new_params = make_params frees @ params1 in
-    let e1 = VarDecl (s, make_partial (name1, params, frees))
-    and acc2 = (name1, new_params, b1) :: acc1 in
-    (acc2, e1)
-  | e -> super#expr name acc e
-end
-
-let the_lifter = new lifter
-
-let lift b =
-  let (tab, b1) = the_lifter#block "#top" [] b in
-  (tab, b1)
-
-type func_tab = (string, parameter list * string * expr list, String.comparator_witness) Base.Map.t
 
 
 let pp_expr_list = Util.pp_list Pprint.pprint_expr
 let pp_parameter_list = Util.pp_list Pprint.pprint_parameter
 
+type func_tab = (string, parameter list * string * expr list, String.comparator_witness) Base.Map.t
 (*
- * Constant propagation:
- * Remove const-arrow declarations
- *  const f = (args) => f_new(context_vars...args)
- * and substitute f_new for f at call sites.
+  * Constant propagation:
+  * Remove const-arrow declarations
+  *  const f = (args) => f_new(context_vars...args)
+  * and substitute f_new for f at call sites.
 *)
 class constant_propagater = object(self)
   inherit [func_tab, unit] ast_transformer as super
@@ -195,3 +142,84 @@ let propagate_fun_bindings b =
   let m = Map.empty (module String) in
   let ((), b1) = the_constant_propagater#block m () b in
   b1
+
+
+(*
+ * Lambda lifting, i.e. removing nested function definitions:
+ * - Identify all function definitions
+ * - Store them in a table with entries of the form
+ *   (<function name>, <parameter list>, <function body>)
+ * - For anonymous functions a name is invented
+ * - Any function name is prefixed with any name bindings encountered on the path from the root
+ * - Replace function defs
+ *     function f(args) = { body(context_vars) }
+ *   by constant declarations
+ *     const f = (args) => f_new(context_vars...args)
+ *)
+let make_params = List.map ~f:(fun p -> Parameter(p, false, None))
+
+type ('a, 'b) lifter_result = Result of 'a | Found of 'b
+
+let insert_block e = function
+| Block b -> Block (e :: b)
+
+class lifter(bounds: string list) = object(self)
+  inherit [string, (string * parameter list * block) option] ast_transformer as super
+
+  val make_partial = fun (s, params_0, params_ext) ->
+    let ps = get_parameter_vars params_0 in
+    let args = List.map ~f:(fun v -> Var (v)) (params_ext @ ps) in
+    Arrow(params_0, Block [App(Var(s), args)])
+
+  method func1 = fun name params b e0 ->
+    let (acc1, params1, b1) = super#func name None params b in (
+      match acc1 with
+      | Some r -> (r, Result(params1, b1))
+      | None ->
+      let frees = free_vars ~bounds e0 in
+      let new_params = make_params frees @ params1 in
+      let e1 = make_partial (name, params, frees)
+      and r = (name, new_params, b1) in
+      (r, Found e1)
+    )
+
+  method! expr name = function
+  | Some(result) -> fun e -> (Some (result), e)
+  | None as acc -> function
+    | VarDecl (s, _) as e0 -> super#expr (name ^ "_" ^ s) acc e0
+    | Arrow (params, b) as e0 -> (
+      match self#func1 name params b e0 with
+      | (r, Result(params1, b1)) -> (Some r, Arrow(params1, b1))
+      | (r, Found e1) -> (Some r, e1)
+      )
+    | FunctionDecl(s, params, b) as e0 ->
+      let name1 = name ^ "_" ^ s in (
+      match self#func1 name1 params b e0 with
+      | (r, Result(params1, b1)) -> (Some r, FunctionDecl(s, params1, b1))
+      | ((name2, params1, b1), Found e1) ->
+        let decl = VarDecl (s, e1) in
+        let b2 = insert_block decl b1 in
+        (Some (name2, params1, propagate_fun_bindings b2), VarDecl (s, e1))
+      )
+    | e -> super#expr name acc e
+end
+
+let lift b =
+  let rec iter tab b n =
+    if n > 100 then
+      raise (Invalid_argument "Seems like we have a termination problem!")
+    else
+    let bounds = List.map tab ~f:(fun (s, _, _) -> s) in
+    let the_lifter = new lifter bounds in
+    let (r_opt, b1) = the_lifter#block "#top" None b in (
+    match r_opt with
+    | None -> (tab, b1)
+    | Some r ->
+      let b2 = propagate_fun_bindings b1 in
+      let () = Stdio.printf "\nIteration %d before propagation:\n" n
+      and () = Stdio.print_endline (Pprint.print_block b1 ())
+      and () = Stdio.printf "\nIteration %d:\n" n
+      and () = Stdio.print_endline (Pprint.print_block b2 ()) in
+      iter (r :: tab) b2 (n + 1)
+    )
+  in iter [] b 0
