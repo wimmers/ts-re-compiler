@@ -187,7 +187,12 @@ export function filter(sourceFile: ts.SourceFile): block {
         const parameters = node.parameters.map(filterParameter)
         let body: block
         if (node.body) {
-            body = filterBlock(node.body)
+            if (node.body.kind !== ts.SyntaxKind.Block) {
+                const innerBody = filterAst(node.body)
+                body = mkBlock([mkReturn2(innerBody)])
+            } else {
+                body = filterBlock(node.body)
+            }
         }
         else {
             throw `Body of function needs to be present: ${node}`
