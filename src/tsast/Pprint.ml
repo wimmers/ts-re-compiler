@@ -16,18 +16,18 @@ let binop op =
     pp_print_string ppf op;
     pp_print_space ppf ()
 in binop (match op with
-| Eq2 -> "=="
-| Eq3 -> "==="
-| Neq2 -> "!="
-| Neq3 -> "!=="
-| Plus -> "+"
-| Minus -> "-"
-| Div -> "/"
-| Times -> "*"
+| `Eq2 -> "=="
+| `Eq3 -> "==="
+| `Neq2 -> "!="
+| `Neq3 -> "!=="
+| `Plus -> "+"
+| `Minus -> "-"
+| `Div -> "/"
+| `Times -> "*"
 (* | _ -> "<...>" *)
 )
 
-let rec pprint_expr (ppf: formatter) =
+let rec (pprint_expr: formatter -> expr -> unit) = fun ppf ->
 let kwd = kwd ppf
 and ident = ident ppf
 and print_space = print_space ppf
@@ -38,8 +38,8 @@ and print_bspace = pp_print_break ppf 1
 and open_hvbox = pp_open_hvbox ppf
 in
 function
-| Var(x) -> ident x
-| VarDecl(name, expr) ->
+| `Var(x) -> ident x
+| `VarDecl(name, expr) ->
     kwd "const";
     print_space ();
     ident name;
@@ -48,7 +48,7 @@ function
     print_space ();
     pprint_expr ppf expr;
     kwd ";"
-| VarObjectPatternDecl(names, expr) ->
+| `VarObjectPatternDecl(names, expr) ->
     kwd "const";
     print_space ();
     kwd "{";
@@ -59,7 +59,7 @@ function
     print_space ();
     pprint_expr ppf expr;
     kwd ";"
-| FunctionDecl(name, params, body) ->
+| `FunctionDecl(name, params, body) ->
     kwd "function";
     print_space ();
     ident name;
@@ -73,7 +73,7 @@ function
     print_space ();
     pprint_block ppf body;
     kwd ";"
-| Arrow(params, body) ->
+| `Arrow(params, body) ->
     kwd "(";
     open_hovbox 1;
         pp_print_list ~pp_sep:(pp_sep ",") pprint_parameter ppf params;
@@ -83,15 +83,15 @@ function
     kwd "=>";
     print_space ();
     pprint_block ppf body
-| String(string) -> kwd "\""; ident string; kwd "\""
-| App(e, args) ->
+| `String(string) -> kwd "\""; ident string; kwd "\""
+| `App(e, args) ->
     pprint_expr ppf e;
     kwd "(";
     open_hovbox 1;
         pp_print_list ~pp_sep:(pp_sep ",") pprint_expr ppf args;
     close_box ();
     kwd ")"
-| If(b, e1, opt_e2) ->
+| `If(b, e1, opt_e2) ->
     kwd "if";
     print_space ();
     kwd "(";
@@ -108,7 +108,7 @@ function
         print_space ();
         pprint_block ppf e2
     | None -> ())
-| Return(e_opt) ->
+| `Return(e_opt) ->
     kwd "return";
     (
         match e_opt with
@@ -118,7 +118,7 @@ function
         | None -> ()
     );
     kwd ";"
-| ObjLit(params) ->
+| `ObjLit(params) ->
     open_hvbox 2;
     kwd "{";
     (
@@ -130,7 +130,7 @@ function
     );
     kwd "}";
     pp_close_box ppf ()
-| ArrayLit(eles) ->
+| `ArrayLit(eles) ->
     open_hvbox 2;
     kwd "[";
     (
@@ -142,19 +142,19 @@ function
     );
     kwd "]";
     pp_close_box ppf ()
-| Spread(e) ->
+| `Spread(e) ->
     kwd "...";
     pprint_expr ppf e
-| Binop(op, e1, e2) ->
+| `Binop(op, e1, e2) ->
     pprint_expr ppf e1;
     pprint_binop ppf op;
     pprint_expr ppf e2
-| Null -> kwd "null"
-| Undefined -> kwd "undefined"
-| Number(n) -> kwd (string_of_float n)
+| `Null -> kwd "null"
+| `Undefined -> kwd "undefined"
+| `Number(n) -> kwd (string_of_float n)
 | _ -> kwd "<>"
 and pprint_block ppf = function
-| Block(exprs) ->
+| `Block(exprs) ->
     pp_open_hvbox ppf 2;
     kwd ppf "{";
     print_space ppf ();
@@ -163,7 +163,7 @@ and pprint_block ppf = function
     kwd ppf "}";
     pp_close_box ppf ();
 and pprint_parameter ppf = function
-| Parameter(name, is_opt, init_opt) ->
+| `Parameter(name, is_opt, init_opt) ->
     ident ppf name;
     if is_opt then kwd ppf "?" else ();
     match init_opt with

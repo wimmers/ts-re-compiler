@@ -4,10 +4,10 @@ open AstTransformers;;
 open Base;;
 
 let add_bounds = fun bounds -> function
-  | VarDecl (s, _) -> s :: bounds
-  | FunctionDecl (s, _, _) -> s :: bounds
-  | VarObjectPatternDecl (xs, _) -> xs @ bounds
-  | VarArrayPatternDecl (xs, _) -> xs @ bounds
+  | `VarDecl (s, _) -> s :: bounds
+  | `FunctionDecl (s, _, _) -> s :: bounds
+  | `VarObjectPatternDecl (xs, _) -> xs @ bounds
+  | `VarArrayPatternDecl (xs, _) -> xs @ bounds
   | _ -> bounds
 
 let invent_name bounds s =
@@ -17,13 +17,13 @@ let invent_name bounds s =
   in if List.mem ~equal:(String.equal) bounds s then Some (loop 0) else None
 
 let disambiguate_parameter (bounds, name_tab as arg) = function
-| Parameter (s, is_opt, e) as e0 -> (
+| `Parameter (s, is_opt, e) as e0 -> (
   match invent_name bounds s with
   | None -> (arg, e0)
   | Some s1 ->
     let name_tab1 = Map.set name_tab ~key:s ~data:s1
     and bounds1 = s1 :: bounds
-    in ((bounds1, name_tab1), Parameter (s1, is_opt, e))
+    in ((bounds1, name_tab1), `Parameter (s1, is_opt, e))
 )
 
 type 'a string_tab = (string, 'a, String.comparator_witness) Base.Map.t
@@ -35,9 +35,9 @@ class parameter_disambiguater = object(self)
 
   (* Incomplete: nested arrows *)
   method! expr (_, name_tab as down) () = function
-  | Var(s) as e -> (
+  | `Var(s) as e -> (
     match Map.find name_tab s with
-    | Some(s1) -> ((), Var(s1))
+    | Some(s1) -> ((), `Var(s1))
     | None -> ((), e)
   )
   | e -> super#expr down () e
@@ -50,7 +50,7 @@ class parameter_disambiguater = object(self)
     super#func arg1 () params1 b
 
   method! block (bounds, name_tab) () = function
-  | Block blocks ->
+  | `Block blocks ->
     let folder bounds e =
       let bounds1 = add_bounds bounds e in
       (* We pass the new binding down immediately *)
@@ -58,7 +58,7 @@ class parameter_disambiguater = object(self)
       (bounds1, e1)
     in
     let (_, blocks1) = List.fold_map ~f:folder ~init:bounds blocks in
-    ((), Block blocks1)
+    ((), `Block blocks1)
 
   end
 
@@ -79,7 +79,7 @@ class const_arrow_folder = object
   inherit [unit, unit] ast_transformer as super
 
   method! expr () () = function
-  | VarDecl(f, Arrow(params, body)) ->  ((), FunctionDecl(f, params, body))
+  | `VarDecl(f, `Arrow(params, body)) ->  ((), `FunctionDecl(f, params, body))
   | e -> super#expr () () e
 
 end
@@ -92,12 +92,12 @@ let fold_const_arrows =
 
 
 let get_parameter_var = function
-  Parameter (s, _, _) -> s
+  `Parameter (s, _, _) -> s
 
 let get_parameter_vars = List.map ~f:get_parameter_var
 
 let is_function_decl = function
-| FunctionDecl _ -> true
+| `FunctionDecl _ -> true
 | _ -> false
 
 (** Compute the free variables of an expression.
@@ -106,11 +106,11 @@ class free_vars_computer = object(self)
   inherit [string list, string list] ast_transformer as super
 
   method! expr bounds frees = function
-  | Var (s) as e ->
+  | `Var (s) as e ->
     let frees1 = if List.mem bounds s ~equal:String.equal then frees else s :: frees in
     (frees1, e)
   (* We assume that functions bind their name recursively, everything else not. *)
-  | FunctionDecl(s,_,_) as e -> super#expr (s :: bounds) frees e
+  | `FunctionDecl(s,_,_) as e -> super#expr (s :: bounds) frees e
   | e -> super#expr bounds frees e
 
   method! func bounds frees params b =
@@ -120,7 +120,7 @@ class free_vars_computer = object(self)
     (frees2, params, b)
 
   method! block bounds frees = function
-  | Block blocks as b ->
+  | `Block blocks as b ->
     let folder (bounds, frees) e =
       let bounds1 = add_bounds bounds e
       and (frees1, _) = self#expr bounds frees e in
@@ -153,9 +153,9 @@ class constant_propagater = object(self)
 
   val make_partial = fun ((params_0:parameter list), (s:string), (args: expr list)) ->
     let ps = get_parameter_vars params_0 in
-    let args_params = List.map ~f:(fun v -> Var (v)) ps in
+    let args_params = List.map ~f:(fun v -> `Var (v)) ps in
     let args_all = args @ args_params in
-    Arrow(params_0, Block [App(Var(s), args_all)])
+    `Arrow(params_0, `Block [`App(`Var(s), args_all)])
 
   val subst_func_call = fun (params0, f, args) es ->
     let num_params = List.length params0 in
@@ -166,12 +166,12 @@ class constant_propagater = object(self)
       else
         let args_context = List.take args (List.length args - num_params) in
         let args_all = args_context @ es in
-        App(Var(f), args_all)
+        `App(`Var(f), args_all)
 
   (** {b Warning} Incomplete: nested arrows *)
   method! expr func_tab () = function
     (* replace function applications directly *)
-  | App(Var(x), es) as e0 -> (
+  | `App(`Var(x), es) as e0 -> (
     match Map.find func_tab x with
       None -> super#expr func_tab () e0
     | Some(call) ->
@@ -179,7 +179,7 @@ class constant_propagater = object(self)
       super#expr func_tab () e1
     )
     (* fallback: replace propagated variables by full lambda *)
-  | Var(x) as e0 -> (
+  | `Var(x) as e0 -> (
     match Map.find func_tab x with
     | None -> super#expr func_tab () e0
     | Some(call) ->
@@ -195,14 +195,14 @@ class constant_propagater = object(self)
       {b Warning} Incomplete: other stmts also generate bindings
   *)
   val update_func_tab = fun tab -> function
-  | VarDecl(s, Arrow(params0, Block [App(Var(f), args)])) ->
+  | `VarDecl(s, `Arrow(params0, `Block [`App(`Var(f), args)])) ->
     (Map.set tab ~key:s ~data:(params0, f, args), true)
-  | VarDecl(s, _)  -> (Map.remove tab s, false)
-  | FunctionDecl(s, _, _) -> (Map.remove tab s, false)
+  | `VarDecl(s, _)  -> (Map.remove tab s, false)
+  | `FunctionDecl(s, _, _) -> (Map.remove tab s, false)
   | _ -> (tab, false)
 
   method! block func_tab () = function
-  | Block blocks ->
+  | `Block blocks ->
     let folder func_tab e =
       let (func_tab1, remove) = update_func_tab func_tab e
       and (), e1 = self#expr func_tab () e in
@@ -210,7 +210,7 @@ class constant_propagater = object(self)
     in
     let (_, blocks1_opt) = List.fold_map ~f:folder ~init:func_tab blocks in
     let blocks1 = List.filter_opt blocks1_opt in
-    ((), Block blocks1)
+    ((), `Block blocks1)
 
   end
 
@@ -235,12 +235,12 @@ let propagate_fun_bindings b =
     - Propagate such a constant declaration (see [propagate_fun_bindings])
     - Recurse until every function has been lifted
  *)
-let make_params = List.map ~f:(fun p -> Parameter(p, false, None))
+let make_params = List.map ~f:(fun p -> `Parameter(p, false, None))
 
 type ('a, 'b) lifter_result = Result of 'a | Found of 'b
 
 let insert_block e = function
-| Block b -> Block (e :: b)
+| `Block b -> `Block (e :: b)
 
 let invent_name1 bounds s = match invent_name bounds s with
 | None -> s
@@ -251,8 +251,8 @@ class lifter(bounds: string list) = object(self)
 
   val make_partial = fun ((s:string), (params_0:parameter list), (params_ext: string list)) ->
     let ps = get_parameter_vars params_0 in
-    let args = List.map ~f:(fun v -> Var (v)) (params_ext @ ps) in
-    Arrow(params_0, Block [App(Var(s), args)])
+    let args = List.map ~f:(fun v -> `Var (v)) (params_ext @ ps) in
+    `Arrow(params_0, `Block [`App(`Var(s), args)])
 
   (** Extract a new function binding.
       @param name the name passed down the AST
@@ -283,20 +283,20 @@ class lifter(bounds: string list) = object(self)
   method! expr name = function
   | Some(result) -> fun e -> (Some (result), e)
   | None as acc -> function
-    | VarDecl (s, _) as e0 -> super#expr (name ^ "_" ^ s) acc e0
-    | Arrow (params, b) as e0 -> (
+    | `VarDecl (s, _) as e0 -> super#expr (name ^ "_" ^ s) acc e0
+    | `Arrow (params, b) as e0 -> (
       match self#func1 name params b e0 with
-      | (r, Result(params1, b1)) -> (Some r, Arrow(params1, b1))
+      | (r, Result(params1, b1)) -> (Some r, `Arrow(params1, b1))
       | (r, Found e1) -> (Some r, e1)
       )
-    | FunctionDecl(s, params, b) as e0 ->
+    | `FunctionDecl(s, params, b) as e0 ->
       let name1 = name ^ "_" ^ s in (
       match self#func1 name1 params b e0 with
-      | (r, Result(params1, b1)) -> (Some r, FunctionDecl(s, params1, b1))
+      | (r, Result(params1, b1)) -> (Some r, `FunctionDecl(s, params1, b1))
       | ((name2, params1, b1), Found e1) ->
-        let decl = VarDecl (s, e1) in
+        let decl = `VarDecl (s, e1) in
         let b2 = insert_block decl b1 in
-        (Some (name2, params1, propagate_fun_bindings b2), VarDecl (s, e1))
+        (Some (name2, params1, propagate_fun_bindings b2), `VarDecl (s, e1))
       )
     | e -> super#expr name acc e
 end

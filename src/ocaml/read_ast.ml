@@ -29,7 +29,7 @@ let () =
   let (tab1, b1) = LambdaLifting.lift b in
   printf "\nExtracted %d function definitions:\n\n" (List.length tab1);
   List.iter (fun (s, params, block) ->
-    print_endline (Pprint.print_expr (Ast_t.FunctionDecl (s, params, block)) ())
+    print_endline (Pprint.print_expr (`FunctionDecl (s, params, block)) ())
     ) tab1;
   printf "\nProgram after lambda lifting:\n\n";
   print_endline (Pprint.print_block b1 ())

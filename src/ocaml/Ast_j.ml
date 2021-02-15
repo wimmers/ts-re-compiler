@@ -1,37 +1,15 @@
 (* Auto-generated from "Ast.atd" *)
 [@@@ocaml.warning "-27-32-35-39"]
 
-open Tsast
+open Tsast;;
 
-type binop = Ast_t.binop = 
-    Eq2 | Eq3 | Neq2 | Neq3 | Times | Plus | Minus | Div
+type binop = Ast_t.binop
 
+type block = Ast_t.block
 
-type block = Ast_t.block =  Block of (expr list) 
+and expr = Ast_t.expr
 
-and expr = Ast_t.expr = 
-    VarDecl of (string * expr)
-  | Var of (string)
-  | App of (expr * expr list)
-  | Number of (float)
-  | String of (string)
-  | Undefined
-  | Null
-  | FunctionDecl of (string * parameter list * block)
-  | Return of (expr option)
-  | ObjLit of (parameter list)
-  | ArrayLit of (expr list)
-  | VarObjectPatternDecl of (string list * expr)
-  | VarArrayPatternDecl of (string list * expr)
-  | Spread of (expr)
-  | If of (expr * block * block option)
-  | Binop of (binop * expr * expr)
-  | Arrow of (parameter list * block)
-
-
-and parameter = Ast_t.parameter = 
-  Parameter of (string * bool * expr option)
-
+and parameter = Ast_t.parameter
 
 let write__4 = (
   Atdgen_runtime.Oj_run.write_list (
@@ -49,17 +27,17 @@ let read__4 = (
 )
 let _4_of_string s =
   read__4 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write_binop : _ -> binop -> _ = (
+let write_binop = (
   fun ob x ->
     match x with
-      | Eq2 -> Bi_outbuf.add_string ob "<\"Eq2\">"
-      | Eq3 -> Bi_outbuf.add_string ob "<\"Eq3\">"
-      | Neq2 -> Bi_outbuf.add_string ob "<\"Neq2\">"
-      | Neq3 -> Bi_outbuf.add_string ob "<\"Neq3\">"
-      | Times -> Bi_outbuf.add_string ob "<\"Times\">"
-      | Plus -> Bi_outbuf.add_string ob "<\"Plus\">"
-      | Minus -> Bi_outbuf.add_string ob "<\"Minus\">"
-      | Div -> Bi_outbuf.add_string ob "<\"Div\">"
+      | `Eq2 -> Bi_outbuf.add_string ob "<\"Eq2\">"
+      | `Eq3 -> Bi_outbuf.add_string ob "<\"Eq3\">"
+      | `Neq2 -> Bi_outbuf.add_string ob "<\"Neq2\">"
+      | `Neq3 -> Bi_outbuf.add_string ob "<\"Neq3\">"
+      | `Times -> Bi_outbuf.add_string ob "<\"Times\">"
+      | `Plus -> Bi_outbuf.add_string ob "<\"Plus\">"
+      | `Minus -> Bi_outbuf.add_string ob "<\"Minus\">"
+      | `Div -> Bi_outbuf.add_string ob "<\"Div\">"
 )
 let string_of_binop ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
@@ -74,56 +52,56 @@ let read_binop = (
             | "Eq2" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (Eq2 : binop)
+              `Eq2
             | "Eq3" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (Eq3 : binop)
+              `Eq3
             | "Neq2" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (Neq2 : binop)
+              `Neq2
             | "Neq3" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (Neq3 : binop)
+              `Neq3
             | "Times" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (Times : binop)
+              `Times
             | "Plus" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (Plus : binop)
+              `Plus
             | "Minus" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (Minus : binop)
+              `Minus
             | "Div" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (Div : binop)
+              `Div
             | x ->
               Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
       | `Double_quote -> (
           match Yojson.Safe.finish_string p lb with
             | "Eq2" ->
-              (Eq2 : binop)
+              `Eq2
             | "Eq3" ->
-              (Eq3 : binop)
+              `Eq3
             | "Neq2" ->
-              (Neq2 : binop)
+              `Neq2
             | "Neq3" ->
-              (Neq3 : binop)
+              `Neq3
             | "Times" ->
-              (Times : binop)
+              `Times
             | "Plus" ->
-              (Plus : binop)
+              `Plus
             | "Minus" ->
-              (Minus : binop)
+              `Minus
             | "Div" ->
-              (Div : binop)
+              `Div
             | x ->
               Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
@@ -171,10 +149,10 @@ and string_of__5 ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
   write__5 ob x;
   Bi_outbuf.contents ob
-and write_block : _ -> block -> _ = (
+and write_block = (
   fun ob x ->
     match x with
-      | Block x ->
+      | `Block x ->
         Bi_outbuf.add_string ob "<\"Block\":";
         (
           fun ob x ->
@@ -192,10 +170,10 @@ and string_of_block ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
   write_block ob x;
   Bi_outbuf.contents ob
-and write_expr : _ -> expr -> _ = (
+and write_expr = (
   fun ob x ->
     match x with
-      | VarDecl x ->
+      | `VarDecl x ->
         Bi_outbuf.add_string ob "<\"VarDecl\":";
         (
           fun ob x ->
@@ -214,7 +192,7 @@ and write_expr : _ -> expr -> _ = (
             Bi_outbuf.add_char ob ')';
         ) ob x;
         Bi_outbuf.add_char ob '>'
-      | Var x ->
+      | `Var x ->
         Bi_outbuf.add_string ob "<\"Var\":";
         (
           fun ob x ->
@@ -227,7 +205,7 @@ and write_expr : _ -> expr -> _ = (
             Bi_outbuf.add_char ob ')';
         ) ob x;
         Bi_outbuf.add_char ob '>'
-      | App x ->
+      | `App x ->
         Bi_outbuf.add_string ob "<\"App\":";
         (
           fun ob x ->
@@ -246,7 +224,7 @@ and write_expr : _ -> expr -> _ = (
             Bi_outbuf.add_char ob ')';
         ) ob x;
         Bi_outbuf.add_char ob '>'
-      | Number x ->
+      | `Number x ->
         Bi_outbuf.add_string ob "<\"Number\":";
         (
           fun ob x ->
@@ -259,7 +237,7 @@ and write_expr : _ -> expr -> _ = (
             Bi_outbuf.add_char ob ')';
         ) ob x;
         Bi_outbuf.add_char ob '>'
-      | String x ->
+      | `String x ->
         Bi_outbuf.add_string ob "<\"String\":";
         (
           fun ob x ->
@@ -272,9 +250,9 @@ and write_expr : _ -> expr -> _ = (
             Bi_outbuf.add_char ob ')';
         ) ob x;
         Bi_outbuf.add_char ob '>'
-      | Undefined -> Bi_outbuf.add_string ob "<\"Undefined\">"
-      | Null -> Bi_outbuf.add_string ob "<\"Null\">"
-      | FunctionDecl x ->
+      | `Undefined -> Bi_outbuf.add_string ob "<\"Undefined\">"
+      | `Null -> Bi_outbuf.add_string ob "<\"Null\">"
+      | `FunctionDecl x ->
         Bi_outbuf.add_string ob "<\"FunctionDecl\":";
         (
           fun ob x ->
@@ -299,7 +277,7 @@ and write_expr : _ -> expr -> _ = (
             Bi_outbuf.add_char ob ')';
         ) ob x;
         Bi_outbuf.add_char ob '>'
-      | Return x ->
+      | `Return x ->
         Bi_outbuf.add_string ob "<\"Return\":";
         (
           fun ob x ->
@@ -312,7 +290,7 @@ and write_expr : _ -> expr -> _ = (
             Bi_outbuf.add_char ob ')';
         ) ob x;
         Bi_outbuf.add_char ob '>'
-      | ObjLit x ->
+      | `ObjLit x ->
         Bi_outbuf.add_string ob "<\"ObjLit\":";
         (
           fun ob x ->
@@ -325,7 +303,7 @@ and write_expr : _ -> expr -> _ = (
             Bi_outbuf.add_char ob ')';
         ) ob x;
         Bi_outbuf.add_char ob '>'
-      | ArrayLit x ->
+      | `ArrayLit x ->
         Bi_outbuf.add_string ob "<\"ArrayLit\":";
         (
           fun ob x ->
@@ -338,7 +316,7 @@ and write_expr : _ -> expr -> _ = (
             Bi_outbuf.add_char ob ')';
         ) ob x;
         Bi_outbuf.add_char ob '>'
-      | VarObjectPatternDecl x ->
+      | `VarObjectPatternDecl x ->
         Bi_outbuf.add_string ob "<\"VarObjectPatternDecl\":";
         (
           fun ob x ->
@@ -357,7 +335,7 @@ and write_expr : _ -> expr -> _ = (
             Bi_outbuf.add_char ob ')';
         ) ob x;
         Bi_outbuf.add_char ob '>'
-      | VarArrayPatternDecl x ->
+      | `VarArrayPatternDecl x ->
         Bi_outbuf.add_string ob "<\"VarArrayPatternDecl\":";
         (
           fun ob x ->
@@ -376,7 +354,7 @@ and write_expr : _ -> expr -> _ = (
             Bi_outbuf.add_char ob ')';
         ) ob x;
         Bi_outbuf.add_char ob '>'
-      | Spread x ->
+      | `Spread x ->
         Bi_outbuf.add_string ob "<\"Spread\":";
         (
           fun ob x ->
@@ -389,7 +367,7 @@ and write_expr : _ -> expr -> _ = (
             Bi_outbuf.add_char ob ')';
         ) ob x;
         Bi_outbuf.add_char ob '>'
-      | If x ->
+      | `If x ->
         Bi_outbuf.add_string ob "<\"If\":";
         (
           fun ob x ->
@@ -414,7 +392,7 @@ and write_expr : _ -> expr -> _ = (
             Bi_outbuf.add_char ob ')';
         ) ob x;
         Bi_outbuf.add_char ob '>'
-      | Binop x ->
+      | `Binop x ->
         Bi_outbuf.add_string ob "<\"Binop\":";
         (
           fun ob x ->
@@ -439,7 +417,7 @@ and write_expr : _ -> expr -> _ = (
             Bi_outbuf.add_char ob ')';
         ) ob x;
         Bi_outbuf.add_char ob '>'
-      | Arrow x ->
+      | `Arrow x ->
         Bi_outbuf.add_string ob "<\"Arrow\":";
         (
           fun ob x ->
@@ -463,10 +441,10 @@ and string_of_expr ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
   write_expr ob x;
   Bi_outbuf.contents ob
-and write_parameter : _ -> parameter -> _ = (
+and write_parameter = (
   fun ob x ->
     match x with
-      | Parameter x ->
+      | `Parameter x ->
         Bi_outbuf.add_string ob "<\"Parameter\":";
         (
           fun ob x ->
@@ -650,7 +628,7 @@ and read_block = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (Block x : block)
+              `Block x
             | x ->
               Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
@@ -701,7 +679,7 @@ and read_block = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
-              (Block x : block)
+              `Block x
             | x ->
               Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
@@ -763,7 +741,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (VarDecl x : expr)
+              `VarDecl x
             | "Var" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
@@ -802,7 +780,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (Var x : expr)
+              `Var x
             | "App" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
@@ -852,7 +830,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (App x : expr)
+              `App x
             | "Number" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
@@ -891,7 +869,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (Number x : expr)
+              `Number x
             | "String" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
@@ -930,15 +908,15 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (String x : expr)
+              `String x
             | "Undefined" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (Undefined : expr)
+              `Undefined
             | "Null" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (Null : expr)
+              `Null
             | "FunctionDecl" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
@@ -999,7 +977,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (FunctionDecl x : expr)
+              `FunctionDecl x
             | "Return" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
@@ -1038,7 +1016,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (Return x : expr)
+              `Return x
             | "ObjLit" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
@@ -1077,7 +1055,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (ObjLit x : expr)
+              `ObjLit x
             | "ArrayLit" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
@@ -1116,7 +1094,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (ArrayLit x : expr)
+              `ArrayLit x
             | "VarObjectPatternDecl" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
@@ -1166,7 +1144,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (VarObjectPatternDecl x : expr)
+              `VarObjectPatternDecl x
             | "VarArrayPatternDecl" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
@@ -1216,7 +1194,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (VarArrayPatternDecl x : expr)
+              `VarArrayPatternDecl x
             | "Spread" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
@@ -1255,7 +1233,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (Spread x : expr)
+              `Spread x
             | "If" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
@@ -1316,7 +1294,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (If x : expr)
+              `If x
             | "Binop" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
@@ -1377,7 +1355,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (Binop x : expr)
+              `Binop x
             | "Arrow" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
@@ -1427,16 +1405,16 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (Arrow x : expr)
+              `Arrow x
             | x ->
               Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
       | `Double_quote -> (
           match Yojson.Safe.finish_string p lb with
             | "Undefined" ->
-              (Undefined : expr)
+              `Undefined
             | "Null" ->
-              (Null : expr)
+              `Null
             | x ->
               Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
@@ -1493,7 +1471,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
-              (VarDecl x : expr)
+              `VarDecl x
             | "Var" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
@@ -1534,7 +1512,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
-              (Var x : expr)
+              `Var x
             | "App" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
@@ -1586,7 +1564,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
-              (App x : expr)
+              `App x
             | "Number" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
@@ -1627,7 +1605,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
-              (Number x : expr)
+              `Number x
             | "String" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
@@ -1668,7 +1646,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
-              (String x : expr)
+              `String x
             | "FunctionDecl" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
@@ -1731,7 +1709,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
-              (FunctionDecl x : expr)
+              `FunctionDecl x
             | "Return" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
@@ -1772,7 +1750,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
-              (Return x : expr)
+              `Return x
             | "ObjLit" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
@@ -1813,7 +1791,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
-              (ObjLit x : expr)
+              `ObjLit x
             | "ArrayLit" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
@@ -1854,7 +1832,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
-              (ArrayLit x : expr)
+              `ArrayLit x
             | "VarObjectPatternDecl" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
@@ -1906,7 +1884,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
-              (VarObjectPatternDecl x : expr)
+              `VarObjectPatternDecl x
             | "VarArrayPatternDecl" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
@@ -1958,7 +1936,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
-              (VarArrayPatternDecl x : expr)
+              `VarArrayPatternDecl x
             | "Spread" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
@@ -1999,7 +1977,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
-              (Spread x : expr)
+              `Spread x
             | "If" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
@@ -2062,7 +2040,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
-              (If x : expr)
+              `If x
             | "Binop" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
@@ -2125,7 +2103,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
-              (Binop x : expr)
+              `Binop x
             | "Arrow" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
@@ -2177,7 +2155,7 @@ and read_expr = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
-              (Arrow x : expr)
+              `Arrow x
             | x ->
               Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
@@ -2250,7 +2228,7 @@ and read_parameter = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (Parameter x : parameter)
+              `Parameter x
             | x ->
               Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
@@ -2323,7 +2301,7 @@ and read_parameter = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
-              (Parameter x : parameter)
+              `Parameter x
             | x ->
               Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )

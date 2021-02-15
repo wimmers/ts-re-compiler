@@ -1,35 +1,13 @@
 (* Auto-generated from "Ast.atd" *)
               [@@@ocaml.warning "-27-32-35-39"]
 
-type binop = Ast_t.binop = 
-    Eq2 | Eq3 | Neq2 | Neq3 | Times | Plus | Minus | Div
+type binop = Ast_t.binop
 
+type block = Ast_t.block
 
-type block = Ast_t.block =  Block of (expr list) 
+and expr = Ast_t.expr
 
-and expr = Ast_t.expr = 
-    VarDecl of (string * expr)
-  | Var of (string)
-  | App of (expr * expr list)
-  | Number of (float)
-  | String of (string)
-  | Undefined
-  | Null
-  | FunctionDecl of (string * parameter list * block)
-  | Return of (expr option)
-  | ObjLit of (parameter list)
-  | ArrayLit of (expr list)
-  | VarObjectPatternDecl of (string list * expr)
-  | VarArrayPatternDecl of (string list * expr)
-  | Spread of (expr)
-  | If of (expr * block * block option)
-  | Binop of (binop * expr * expr)
-  | Arrow of (parameter list * block)
-
-
-and parameter = Ast_t.parameter = 
-  Parameter of (string * bool * expr option)
-
+and parameter = Ast_t.parameter
 
 let write__4 = (
   Atdgen_codec_runtime.Encode.list (
@@ -42,22 +20,22 @@ let read__4 = (
   )
 )
 let write_binop = (
-  Atdgen_codec_runtime.Encode.make (fun (x : binop) -> match x with
-    | Eq2 ->
+  Atdgen_codec_runtime.Encode.make (fun (x : _) -> match x with
+    | `Eq2 ->
     Atdgen_codec_runtime.Encode.constr0 "Eq2"
-    | Eq3 ->
+    | `Eq3 ->
     Atdgen_codec_runtime.Encode.constr0 "Eq3"
-    | Neq2 ->
+    | `Neq2 ->
     Atdgen_codec_runtime.Encode.constr0 "Neq2"
-    | Neq3 ->
+    | `Neq3 ->
     Atdgen_codec_runtime.Encode.constr0 "Neq3"
-    | Times ->
+    | `Times ->
     Atdgen_codec_runtime.Encode.constr0 "Times"
-    | Plus ->
+    | `Plus ->
     Atdgen_codec_runtime.Encode.constr0 "Plus"
-    | Minus ->
+    | `Minus ->
     Atdgen_codec_runtime.Encode.constr0 "Minus"
-    | Div ->
+    | `Div ->
     Atdgen_codec_runtime.Encode.constr0 "Div"
   )
 )
@@ -67,49 +45,49 @@ let read_binop = (
       (
       "Eq2"
       ,
-        `Single (Eq2)
+        `Single (`Eq2)
       )
     ;
       (
       "Eq3"
       ,
-        `Single (Eq3)
+        `Single (`Eq3)
       )
     ;
       (
       "Neq2"
       ,
-        `Single (Neq2)
+        `Single (`Neq2)
       )
     ;
       (
       "Neq3"
       ,
-        `Single (Neq3)
+        `Single (`Neq3)
       )
     ;
       (
       "Times"
       ,
-        `Single (Times)
+        `Single (`Times)
       )
     ;
       (
       "Plus"
       ,
-        `Single (Plus)
+        `Single (`Plus)
       )
     ;
       (
       "Minus"
       ,
-        `Single (Minus)
+        `Single (`Minus)
       )
     ;
       (
       "Div"
       ,
-        `Single (Div)
+        `Single (`Div)
       )
   ]
 )
@@ -134,8 +112,8 @@ and write__5 js = (
   )
 ) js
 and write_block js = (
-  Atdgen_codec_runtime.Encode.make (fun (x : block) -> match x with
-    | Block x ->
+  Atdgen_codec_runtime.Encode.make (fun (x : _) -> match x with
+    | `Block x ->
     Atdgen_codec_runtime.Encode.constr1 "Block" (
       Atdgen_codec_runtime.Encode.tuple1
         (
@@ -145,8 +123,8 @@ and write_block js = (
   )
 ) js
 and write_expr js = (
-  Atdgen_codec_runtime.Encode.make (fun (x : expr) -> match x with
-    | VarDecl x ->
+  Atdgen_codec_runtime.Encode.make (fun (x : _) -> match x with
+    | `VarDecl x ->
     Atdgen_codec_runtime.Encode.constr1 "VarDecl" (
       Atdgen_codec_runtime.Encode.tuple2
         (
@@ -156,14 +134,14 @@ and write_expr js = (
           write_expr
         )
     ) x
-    | Var x ->
+    | `Var x ->
     Atdgen_codec_runtime.Encode.constr1 "Var" (
       Atdgen_codec_runtime.Encode.tuple1
         (
           Atdgen_codec_runtime.Encode.string
         )
     ) x
-    | App x ->
+    | `App x ->
     Atdgen_codec_runtime.Encode.constr1 "App" (
       Atdgen_codec_runtime.Encode.tuple2
         (
@@ -173,25 +151,25 @@ and write_expr js = (
           write__1
         )
     ) x
-    | Number x ->
+    | `Number x ->
     Atdgen_codec_runtime.Encode.constr1 "Number" (
       Atdgen_codec_runtime.Encode.tuple1
         (
           Atdgen_codec_runtime.Encode.float
         )
     ) x
-    | String x ->
+    | `String x ->
     Atdgen_codec_runtime.Encode.constr1 "String" (
       Atdgen_codec_runtime.Encode.tuple1
         (
           Atdgen_codec_runtime.Encode.string
         )
     ) x
-    | Undefined ->
+    | `Undefined ->
     Atdgen_codec_runtime.Encode.constr0 "Undefined"
-    | Null ->
+    | `Null ->
     Atdgen_codec_runtime.Encode.constr0 "Null"
-    | FunctionDecl x ->
+    | `FunctionDecl x ->
     Atdgen_codec_runtime.Encode.constr1 "FunctionDecl" (
       Atdgen_codec_runtime.Encode.tuple3
         (
@@ -204,28 +182,28 @@ and write_expr js = (
           write_block
         )
     ) x
-    | Return x ->
+    | `Return x ->
     Atdgen_codec_runtime.Encode.constr1 "Return" (
       Atdgen_codec_runtime.Encode.tuple1
         (
           write__3
         )
     ) x
-    | ObjLit x ->
+    | `ObjLit x ->
     Atdgen_codec_runtime.Encode.constr1 "ObjLit" (
       Atdgen_codec_runtime.Encode.tuple1
         (
           write__2
         )
     ) x
-    | ArrayLit x ->
+    | `ArrayLit x ->
     Atdgen_codec_runtime.Encode.constr1 "ArrayLit" (
       Atdgen_codec_runtime.Encode.tuple1
         (
           write__1
         )
     ) x
-    | VarObjectPatternDecl x ->
+    | `VarObjectPatternDecl x ->
     Atdgen_codec_runtime.Encode.constr1 "VarObjectPatternDecl" (
       Atdgen_codec_runtime.Encode.tuple2
         (
@@ -235,7 +213,7 @@ and write_expr js = (
           write_expr
         )
     ) x
-    | VarArrayPatternDecl x ->
+    | `VarArrayPatternDecl x ->
     Atdgen_codec_runtime.Encode.constr1 "VarArrayPatternDecl" (
       Atdgen_codec_runtime.Encode.tuple2
         (
@@ -245,14 +223,14 @@ and write_expr js = (
           write_expr
         )
     ) x
-    | Spread x ->
+    | `Spread x ->
     Atdgen_codec_runtime.Encode.constr1 "Spread" (
       Atdgen_codec_runtime.Encode.tuple1
         (
           write_expr
         )
     ) x
-    | If x ->
+    | `If x ->
     Atdgen_codec_runtime.Encode.constr1 "If" (
       Atdgen_codec_runtime.Encode.tuple3
         (
@@ -265,7 +243,7 @@ and write_expr js = (
           write__5
         )
     ) x
-    | Binop x ->
+    | `Binop x ->
     Atdgen_codec_runtime.Encode.constr1 "Binop" (
       Atdgen_codec_runtime.Encode.tuple3
         (
@@ -278,7 +256,7 @@ and write_expr js = (
           write_expr
         )
     ) x
-    | Arrow x ->
+    | `Arrow x ->
     Atdgen_codec_runtime.Encode.constr1 "Arrow" (
       Atdgen_codec_runtime.Encode.tuple2
         (
@@ -291,8 +269,8 @@ and write_expr js = (
   )
 ) js
 and write_parameter js = (
-  Atdgen_codec_runtime.Encode.make (fun (x : parameter) -> match x with
-    | Parameter x ->
+  Atdgen_codec_runtime.Encode.make (fun (x : _) -> match x with
+    | `Parameter x ->
     Atdgen_codec_runtime.Encode.constr1 "Parameter" (
       Atdgen_codec_runtime.Encode.tuple3
         (
@@ -338,7 +316,7 @@ and read_block js = (
           (
             read__1
           )
-        |> Atdgen_codec_runtime.Decode.map (fun x -> ((Block x) : block))
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`Block x) : _))
         )
       )
   ]
@@ -357,7 +335,7 @@ and read_expr js = (
           (
             read_expr
           )
-        |> Atdgen_codec_runtime.Decode.map (fun x -> ((VarDecl x) : expr))
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`VarDecl x) : _))
         )
       )
     ;
@@ -369,7 +347,7 @@ and read_expr js = (
           (
             Atdgen_codec_runtime.Decode.string
           )
-        |> Atdgen_codec_runtime.Decode.map (fun x -> ((Var x) : expr))
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`Var x) : _))
         )
       )
     ;
@@ -384,7 +362,7 @@ and read_expr js = (
           (
             read__1
           )
-        |> Atdgen_codec_runtime.Decode.map (fun x -> ((App x) : expr))
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`App x) : _))
         )
       )
     ;
@@ -396,7 +374,7 @@ and read_expr js = (
           (
             Atdgen_codec_runtime.Decode.float
           )
-        |> Atdgen_codec_runtime.Decode.map (fun x -> ((Number x) : expr))
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`Number x) : _))
         )
       )
     ;
@@ -408,20 +386,20 @@ and read_expr js = (
           (
             Atdgen_codec_runtime.Decode.string
           )
-        |> Atdgen_codec_runtime.Decode.map (fun x -> ((String x) : expr))
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`String x) : _))
         )
       )
     ;
       (
       "Undefined"
       ,
-        `Single (Undefined)
+        `Single (`Undefined)
       )
     ;
       (
       "Null"
       ,
-        `Single (Null)
+        `Single (`Null)
       )
     ;
       (
@@ -438,7 +416,7 @@ and read_expr js = (
           (
             read_block
           )
-        |> Atdgen_codec_runtime.Decode.map (fun x -> ((FunctionDecl x) : expr))
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`FunctionDecl x) : _))
         )
       )
     ;
@@ -450,7 +428,7 @@ and read_expr js = (
           (
             read__3
           )
-        |> Atdgen_codec_runtime.Decode.map (fun x -> ((Return x) : expr))
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`Return x) : _))
         )
       )
     ;
@@ -462,7 +440,7 @@ and read_expr js = (
           (
             read__2
           )
-        |> Atdgen_codec_runtime.Decode.map (fun x -> ((ObjLit x) : expr))
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`ObjLit x) : _))
         )
       )
     ;
@@ -474,7 +452,7 @@ and read_expr js = (
           (
             read__1
           )
-        |> Atdgen_codec_runtime.Decode.map (fun x -> ((ArrayLit x) : expr))
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`ArrayLit x) : _))
         )
       )
     ;
@@ -489,7 +467,7 @@ and read_expr js = (
           (
             read_expr
           )
-        |> Atdgen_codec_runtime.Decode.map (fun x -> ((VarObjectPatternDecl x) : expr))
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`VarObjectPatternDecl x) : _))
         )
       )
     ;
@@ -504,7 +482,7 @@ and read_expr js = (
           (
             read_expr
           )
-        |> Atdgen_codec_runtime.Decode.map (fun x -> ((VarArrayPatternDecl x) : expr))
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`VarArrayPatternDecl x) : _))
         )
       )
     ;
@@ -516,7 +494,7 @@ and read_expr js = (
           (
             read_expr
           )
-        |> Atdgen_codec_runtime.Decode.map (fun x -> ((Spread x) : expr))
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`Spread x) : _))
         )
       )
     ;
@@ -534,7 +512,7 @@ and read_expr js = (
           (
             read__5
           )
-        |> Atdgen_codec_runtime.Decode.map (fun x -> ((If x) : expr))
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`If x) : _))
         )
       )
     ;
@@ -552,7 +530,7 @@ and read_expr js = (
           (
             read_expr
           )
-        |> Atdgen_codec_runtime.Decode.map (fun x -> ((Binop x) : expr))
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`Binop x) : _))
         )
       )
     ;
@@ -567,7 +545,7 @@ and read_expr js = (
           (
             read_block
           )
-        |> Atdgen_codec_runtime.Decode.map (fun x -> ((Arrow x) : expr))
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`Arrow x) : _))
         )
       )
   ]
@@ -589,7 +567,7 @@ and read_parameter js = (
           (
             read__3
           )
-        |> Atdgen_codec_runtime.Decode.map (fun x -> ((Parameter x) : parameter))
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`Parameter x) : _))
         )
       )
   ]

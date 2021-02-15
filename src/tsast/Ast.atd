@@ -7,7 +7,7 @@ type binop = [
   | Plus
   | Minus
   | Div
-] <ocaml repr="classic">
+]
 
 type expr = [
   | VarDecl of (string * expr)
@@ -27,8 +27,8 @@ type expr = [
   | If of (expr * block * block option)
   | Binop of (binop * expr * expr)
   | Arrow of (parameter list * block)
-] <ocaml repr="classic">
+]
 
-type parameter = [Parameter of (string * bool * expr option)] <ocaml repr="classic">
+type parameter = [Parameter of (string * bool * expr option)]
 
-type block = [Block of (expr list)] <ocaml repr="classic">
+type block = [Block of (expr list)]
