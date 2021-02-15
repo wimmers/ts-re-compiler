@@ -145,11 +145,17 @@ type func_tab = (string, parameter list * string * expr list, String.comparator_
 
 (** Constant propagation:
     Remove const-arrow declarations
-     [const f = (args) => f_new(context_vars...args)]
+     [const f = (params_0) => f_new(context_args...params_0)]
     and substitute [f_new] for [f] at call sites.
 *)
 class constant_propagater = object(self)
   inherit [func_tab, unit] ast_transformer as super
+
+  val make_partial = fun ((params_0:parameter list), (s:string), (args: expr list)) ->
+    let ps = get_parameter_vars params_0 in
+    let args_params = List.map ~f:(fun v -> Var (v)) ps in
+    let args_all = args @ args_params in
+    Arrow(params_0, Block [App(Var(s), args_all)])
 
   val subst_func_call = fun (params0, f, args) es ->
     let num_params = List.length params0 in
@@ -164,6 +170,7 @@ class constant_propagater = object(self)
 
   (** {b Warning} Incomplete: nested arrows *)
   method! expr func_tab () = function
+    (* replace function applications directly *)
   | App(Var(x), es) as e0 -> (
     match Map.find func_tab x with
       None -> super#expr func_tab () e0
@@ -171,6 +178,14 @@ class constant_propagater = object(self)
       let e1 = subst_func_call call es in
       super#expr func_tab () e1
     )
+    (* fallback: replace propagated variables by full lambda *)
+  | Var(x) as e0 -> (
+    match Map.find func_tab x with
+    | None -> super#expr func_tab () e0
+    | Some(call) ->
+      let e1 = make_partial call in
+      super#expr func_tab () e1
+  )
   | e -> super#expr func_tab () e
 
   (** [update_func_tab tab e] removes or updates function bindings in [tab]
@@ -214,9 +229,9 @@ let propagate_fun_bindings b =
     - For anonymous functions a name is invented
     - Any function name is prefixed with any name bindings encountered on the path from the root
     - Replace function defs
-        [function f(args) = { body(context_vars) }]
+        [function f(params) = { body(context_vars) }]
       by constant declarations
-        [const f = (args) => f_new(context_vars...args)]
+        [const f = (params) => f_new(context_vars...params)]
     - Propagate such a constant declaration (see [propagate_fun_bindings])
     - Recurse until every function has been lifted
  *)
@@ -234,7 +249,7 @@ let invent_name1 bounds s = match invent_name bounds s with
 class lifter(bounds: string list) = object(self)
   inherit [string, (string * parameter list * block) option] ast_transformer as super
 
-  val make_partial = fun (s, params_0, params_ext) ->
+  val make_partial = fun ((s:string), (params_0:parameter list), (params_ext: string list)) ->
     let ps = get_parameter_vars params_0 in
     let args = List.map ~f:(fun v -> Var (v)) (params_ext @ ps) in
     Arrow(params_0, Block [App(Var(s), args)])
@@ -246,7 +261,7 @@ class lifter(bounds: string list) = object(self)
       @param e0 the whole expression
       @return A pair [(r, extracted)] where [r = (new_name, new_params, b_new)]
         and [extracted] is either [Result _] from further below the AST or an
-        extracted call expression of the form [(args) => f_new(context_vars...args)].
+        extracted call expression of the form [(params) => f_new(context_vars...params)].
         Contents of [r]:
         - [new_name] is a proposed function name
         - [new_params] are [context_vars...params]
@@ -288,7 +303,7 @@ end
 
 let lift b =
   let rec iter tab b n =
-    if n > 100 then
+    if n > 10 then
       raise (Invalid_argument "Seems like we have a termination problem!")
     else
     let bounds = List.map tab ~f:(fun (s, _, _) -> s) in
