@@ -26,10 +26,10 @@ let () =
   let b = LambdaLifting.fold_const_arrows b in
   printf "\nProgram after const-arrow folding:\n\n";
   print_endline (Pprint.print_block b ());
-  let (tab1, b1) = LambdaLifting.lift b in
-  printf "\nExtracted %d function definitions:\n\n" (List.length tab1);
+  let (tab, b) = LambdaLifting.lift b in
+  printf "\nExtracted %d function definitions:\n\n" (List.length tab);
   List.iter (fun (s, params, block) ->
     print_endline (Pprint.print_expr (`FunctionDecl (s, params, block)) ())
-    ) tab1;
+    ) tab;
   printf "\nProgram after lambda lifting:\n\n";
-  print_endline (Pprint.print_block b1 ())
+  print_endline (Pprint.print_block b ())
