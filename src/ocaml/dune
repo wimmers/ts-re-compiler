@@ -1,3 +1,6 @@
 (executable
  (name read_ast)
- (libraries tsast atdgen stdio))
+ (public_name myast)
+ (package ts-re-compiler)
+ (libraries asttransforms)
+ (modes byte exe))

@@ -1,5 +1,6 @@
 open Printf
 open Tsast
+open Asttransforms
 
 let () =
   if Array.length Sys.argv != 2 then begin

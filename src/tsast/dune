@@ -1,4 +1,5 @@
 (library
  (name tsast)
+ (public_name ts-re-compiler.tsast)
  (modules Ast_t Pprint)
  (libraries atdgen))
