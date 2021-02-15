@@ -266,6 +266,10 @@ and write_expr js = (
           write_block
         )
     ) x
+    | `Protected x ->
+    Atdgen_codec_runtime.Encode.constr1 "Protected" (
+      write_expr
+    ) x
   )
 ) js
 and write_parameter js = (
@@ -546,6 +550,15 @@ and read_expr js = (
             read_block
           )
         |> Atdgen_codec_runtime.Decode.map (fun x -> ((`Arrow x) : _))
+        )
+      )
+    ;
+      (
+      "Protected"
+      ,
+        `Decode (
+        read_expr
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`Protected x) : _))
         )
       )
   ]

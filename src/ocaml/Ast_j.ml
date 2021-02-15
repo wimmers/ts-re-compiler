@@ -436,6 +436,12 @@ and write_expr = (
             Bi_outbuf.add_char ob ')';
         ) ob x;
         Bi_outbuf.add_char ob '>'
+      | `Protected x ->
+        Bi_outbuf.add_string ob "<\"Protected\":";
+        (
+          write_expr
+        ) ob x;
+        Bi_outbuf.add_char ob '>'
 )
 and string_of_expr ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
@@ -1406,6 +1412,15 @@ and read_expr = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
               `Arrow x
+            | "Protected" ->
+              Atdgen_runtime.Oj_run.read_until_field_value p lb;
+              let x = (
+                  read_expr
+                ) p lb
+              in
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_gt p lb;
+              `Protected x
             | x ->
               Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
@@ -2156,6 +2171,17 @@ and read_expr = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
               `Arrow x
+            | "Protected" ->
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_comma p lb;
+              Yojson.Safe.read_space p lb;
+              let x = (
+                  read_expr
+                ) p lb
+              in
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_rbr p lb;
+              `Protected x
             | x ->
               Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )

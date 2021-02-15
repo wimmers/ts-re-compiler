@@ -23,6 +23,7 @@ and expr = [
   | `If of (expr * block * block option)
   | `Binop of (binop * expr * expr)
   | `Arrow of (parameter list * block)
+  | `Protected of expr
 ]
 
 and parameter = [ `Parameter of (string * bool * expr option) ]

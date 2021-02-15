@@ -152,6 +152,8 @@ function
 | `Null -> kwd "null"
 | `Undefined -> kwd "undefined"
 | `Number(n) -> kwd (string_of_float n)
+| `Protected(e) ->
+    fprintf ppf "@[«%a»@]" pprint_expr e
 | _ -> kwd "<>"
 and pprint_block ppf = function
 | `Block(exprs) ->
