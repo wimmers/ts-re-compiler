@@ -69,6 +69,22 @@ let disambiguate_parameters block =
   in block1
 
 
+class unprotecter = object
+  inherit [unit, unit] ast_transformer as super
+
+  method! expr () () = function
+  | `Protected(e) -> super#expr () () e
+  | e -> super#expr () () e
+
+end
+
+let the_unprotecter = new unprotecter
+
+(** [unprotect b] removes any [`Protect] markers form block [b] *)
+let unprotect b =
+  let _, b1 = the_unprotecter#block () () b in b1
+
+
 (** Folds declarations of the form
       [const f = (params) => { body }]
     into
@@ -141,7 +157,8 @@ let free_vars ?(bounds=[]) e =
 let pp_expr_list = Util.pp_list Pprint.pprint_expr
 let pp_parameter_list = Util.pp_list Pprint.pprint_parameter
 
-type func_tab = (string, parameter list * string * expr list, String.comparator_witness) Base.Map.t
+type func_tab =
+  (string, parameter list * string * expr list, String.comparator_witness) Base.Map.t
 
 (** Constant propagation:
     Remove const-arrow declarations
@@ -151,11 +168,8 @@ type func_tab = (string, parameter list * string * expr list, String.comparator_
 class constant_propagater = object(self)
   inherit [func_tab, unit] ast_transformer as super
 
-  val make_partial = fun ((params_0:parameter list), (s:string), (args: expr list)) ->
-    let ps = get_parameter_vars params_0 in
-    let args_params = List.map ~f:(fun v -> `Var (v)) ps in
-    let args_all = args @ args_params in
-    `Arrow(params_0, `Block [`App(`Var(s), args_all)])
+  val make_partial = fun (params0, f, args) ->
+    `Protected (`Arrow(params0, `Block [`Return (Some (`App(`Var(f), args)))]))
 
   val subst_func_call = fun (params0, f, args) es ->
     let num_params = List.length params0 in
@@ -185,7 +199,7 @@ class constant_propagater = object(self)
     | Some(call) ->
       let e1 = make_partial call in
       super#expr func_tab () e1
-  )
+    )
   | e -> super#expr func_tab () e
 
   (** [update_func_tab tab e] removes or updates function bindings in [tab]
@@ -295,8 +309,8 @@ class lifter(bounds: string list) = object(self)
       | (r, Result(params1, b1)) -> (Some r, `FunctionDecl(s, params1, b1))
       | ((name2, params1, b1), Found e1) ->
         let decl = `VarDecl (s, e1) in
-        let b2 = insert_block decl b1 in
-        (Some (name2, params1, propagate_fun_bindings b2), `VarDecl (s, e1))
+        let b2 = insert_block decl b1 |> propagate_fun_bindings |> unprotect in
+        (Some (name2, params1, b2), `VarDecl (s, e1))
       )
     | e -> super#expr name acc e
 end
@@ -319,4 +333,6 @@ let lift b =
       and () = Stdio.print_endline (Pprint.print_block b2 ()) in
       iter (r :: tab) b2 (n + 1)
     )
-  in iter [] b 0
+  in
+  let (tab, b1) = iter [] b 0 in
+  (tab, unprotect b1)
