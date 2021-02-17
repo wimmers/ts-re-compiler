@@ -9,13 +9,21 @@
     "re:build": "bsb -make-world -clean-world",
     "re:watch": "bsb -make-world -clean-world -w",
     "watch": "tsc -w",
-    "run": "ESM_DISABLE_CACHE=1 node -r esm src/index.js"
+    "run": "ESM_DISABLE_CACHE=1 node -r esm src/index.js",
+    "babel": "npx babel src/examples  --extensions '.js,.ts' --keep-file-extension --out-dir src/examples/babel"
   },
   "keywords": [],
   "author": "Simon Wimmer",
   "license": "ISC",
   "devDependencies": {
+    "@babel/cli": "^7.12.16",
+    "@babel/core": "^7.12.16",
+    "@babel/plugin-syntax-typescript": "^7.12.13",
+    "@babel/plugin-transform-arrow-functions": "^7.12.13",
+    "@babel/plugin-transform-parameters": "^7.12.13",
+    "@babel/plugin-transform-spread": "^7.12.13",
     "@types/node": "^14.14.22",
+    "babel-plugin-transform-es2015-destructuring": "^6.23.0",
     "bs-platform": "^8.4.2",
     "gentype": "^3.42.0",
     "typescript": "^4.1.3"

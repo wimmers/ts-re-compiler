@@ -1,7 +1,8 @@
 {
   "exclude": [
     "node_modules",
-    "_build"
+    "_build",
+    "src/examples/babel"
   ],
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig.json to read more about this file */

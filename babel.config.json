@@ -1,0 +1,9 @@
+{
+    "plugins": [
+        "@babel/plugin-syntax-typescript",
+        "@babel/plugin-transform-spread",
+        "@babel/plugin-transform-parameters",
+        "@babel/plugin-transform-arrow-functions",
+        "babel-plugin-transform-es2015-destructuring"
+    ]
+}
