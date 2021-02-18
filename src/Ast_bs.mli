@@ -9,6 +9,8 @@ and expr = Ast_t.expr
 
 and parameter = Ast_t.parameter
 
+and stmt = Ast_t.stmt
+
 val read_binop :  binop Atdgen_codec_runtime.Decode.t
 
 val write_binop :  binop Atdgen_codec_runtime.Encode.t
@@ -24,4 +26,8 @@ val write_expr :  expr Atdgen_codec_runtime.Encode.t
 val read_parameter :  parameter Atdgen_codec_runtime.Decode.t
 
 val write_parameter :  parameter Atdgen_codec_runtime.Encode.t
+
+val read_stmt :  stmt Atdgen_codec_runtime.Decode.t
+
+val write_stmt :  stmt Atdgen_codec_runtime.Encode.t
 

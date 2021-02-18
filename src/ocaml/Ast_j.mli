@@ -1,7 +1,7 @@
 (* Auto-generated from "Ast.atd" *)
 [@@@ocaml.warning "-27-32-35-39"]
 
-open Tsast;;
+open Tsast
 
 type binop = Ast_t.binop
 
@@ -10,6 +10,8 @@ type block = Ast_t.block
 and expr = Ast_t.expr
 
 and parameter = Ast_t.parameter
+
+and stmt = Ast_t.stmt
 
 val write_binop :
   Bi_outbuf.t -> binop -> unit
@@ -90,4 +92,24 @@ val read_parameter :
 val parameter_of_string :
   string -> parameter
   (** Deserialize JSON data of type {!parameter}. *)
+
+val write_stmt :
+  Bi_outbuf.t -> stmt -> unit
+  (** Output a JSON value of type {!stmt}. *)
+
+val string_of_stmt :
+  ?len:int -> stmt -> string
+  (** Serialize a value of type {!stmt}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read_stmt :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> stmt
+  (** Input JSON data of type {!stmt}. *)
+
+val stmt_of_string :
+  string -> stmt
+  (** Deserialize JSON data of type {!stmt}. *)
 

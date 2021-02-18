@@ -1,11 +1,21 @@
 import * as ts from "typescript";
-import { expr, parameter, block, binop } from './tsast/Ast_t.gen';
+import { stmt, expr, parameter, block, binop } from './tsast/Ast_t.gen';
 import {
     mkApp, mkNull, mkNumber, mkUndefined, mkVar, mkVarDecl, mkParameter1, mkParameter2,
     mkFunctionDecl, mkBlock,
     mkReturn1, mkReturn2, mkObjLit, mkArrayLit, mkSpread, mkIf1, mkIf2, mkBinop, mkArrow,
-    mkObjectBindingPattern, mkArrayBindingPattern
+    mkObjectBindingPattern, mkArrayBindingPattern, mkNoOp, mkExpression, mkConditional, mkElementAccess, mkPropertyAccess
 } from './tsast/Ast.gen';
+
+const babelFills = [
+    "_toConsumableArray",
+    "_nonIterableSpread",
+    "_nonIterableSpread",
+    "_unsupportedIterableToArray",
+    "_iterableToArray",
+    "_arrayWithoutHoles",
+    "_arrayLikeToArray",
+]
 
 export function filter(sourceFile: ts.SourceFile): block {
 
@@ -18,7 +28,7 @@ export function filter(sourceFile: ts.SourceFile): block {
         const init = param.initializer
         const name = ((param.name as ts.Identifier).escapedText as string)
         if (init !== undefined) {
-            return mkParameter2(name, isOpt, filterAst(init))
+            return mkParameter2(name, isOpt, filterExpr(init))
         } else {
             return mkParameter1(name, isOpt)
         }
@@ -29,8 +39,8 @@ export function filter(sourceFile: ts.SourceFile): block {
             throw `Not a block: ${node}`
         }
         const block = (node as ts.BlockLike)
-        const exprs = block.statements.map(filterAst)
-        return mkBlock(exprs)
+        const stmts = block.statements.map(filterStmt)
+        return mkBlock(stmts)
     }
 
     function filterBlockOrExpr(node: ts.Node): block {
@@ -38,14 +48,33 @@ export function filter(sourceFile: ts.SourceFile): block {
             return filterBlock(node)
         }
         else {
-            return mkBlock([filterAst(node)])
+            return mkBlock([mkExpression(filterExpr(node))])
         }
     }
 
-    function filterAst(node: ts.Node): expr {
+    function filterStmt(node: ts.Node): stmt {
         switch (node.kind) {
             case ts.SyntaxKind.VariableStatement:
                 return filterVariableStatement(node as ts.VariableStatement)
+
+            case ts.SyntaxKind.FunctionDeclaration:
+                return filterFunctionDeclaration(node as ts.FunctionDeclaration)
+
+            case ts.SyntaxKind.ReturnStatement:
+                return filterReturnStatement(node as ts.ReturnStatement)
+
+            case ts.SyntaxKind.IfStatement:
+                return filterIfStatement(node as ts.IfStatement)
+
+            case ts.SyntaxKind.ExpressionStatement:
+                return filterExpressionStatement(node as ts.ExpressionStatement)
+        }
+
+        return mkExpression(mkUndefined)
+    }
+
+    function filterExpr(node: ts.Node): expr {
+        switch (node.kind) {
 
             case ts.SyntaxKind.CallExpression:
                 return filterCallExpression(node as ts.CallExpression)
@@ -59,12 +88,6 @@ export function filter(sourceFile: ts.SourceFile): block {
             case ts.SyntaxKind.NumericLiteral:
                 return filterNumericLiteral(node as ts.NumericLiteral)
 
-            case ts.SyntaxKind.FunctionDeclaration:
-                return filterFunctionDeclaration(node as ts.FunctionDeclaration)
-
-            case ts.SyntaxKind.ReturnStatement:
-                return filterReturnStatement(node as ts.ReturnStatement)
-
             case ts.SyntaxKind.ObjectLiteralExpression:
                 return filterObjectLiteralExpression(node as ts.ObjectLiteralExpression)
 
@@ -74,14 +97,21 @@ export function filter(sourceFile: ts.SourceFile): block {
             case ts.SyntaxKind.SpreadElement:
                 return filterSpreadElement(node as ts.SpreadElement)
 
-            case ts.SyntaxKind.IfStatement:
-                return filterIfStatement(node as ts.IfStatement)
-
             case ts.SyntaxKind.BinaryExpression:
                 return filterBinaryExpression(node as ts.BinaryExpression)
 
+            case ts.SyntaxKind.FunctionExpression:
             case ts.SyntaxKind.ArrowFunction:
                 return filterArrowFunction(node as ts.ArrowFunction)
+
+            case ts.SyntaxKind.ConditionalExpression:
+                return filterConditionalExpression(node as ts.ConditionalExpression)
+
+            case ts.SyntaxKind.PropertyAccessExpression:
+                return filterPropertyAccessExpression(node as ts.PropertyAccessExpression)
+
+            case ts.SyntaxKind.ElementAccessExpression:
+                return filterElementAccessExpression(node as ts.ElementAccessExpression)
 
         }
 
@@ -98,11 +128,27 @@ export function filter(sourceFile: ts.SourceFile): block {
         return mkNumber(num)
     }
 
+    function filterElementAccessExpression(node: ts.ElementAccessExpression): expr {
+        const e1 = filterExpr(node.expression)
+        const e2 = filterExpr(node.argumentExpression)
+        return mkElementAccess(e1, e2)
+    }
+
+    function filterPropertyAccessExpression(node: ts.PropertyAccessExpression): expr {
+        const e = filterExpr(node.expression)
+        const identifier = (node.name as ts.Identifier)
+        const name: string = (identifier.escapedText as string)
+        return mkPropertyAccess(e, name)
+    }
+
     function filterBinaryExpression(node: ts.BinaryExpression): expr {
-        const left = filterAst(node.left)
-        const right = filterAst(node.right)
+        const left = filterExpr(node.left)
+        const right = filterExpr(node.right)
         let binop: binop
         switch (node.operatorToken.kind) {
+            case ts.SyntaxKind.EqualsToken:
+                binop = "Eq"
+                break;
             case ts.SyntaxKind.EqualsEqualsToken:
                 binop = "Eq2"
                 break;
@@ -133,8 +179,15 @@ export function filter(sourceFile: ts.SourceFile): block {
         return mkBinop(binop, left, right)
     }
 
-    function filterIfStatement(node: ts.IfStatement): expr {
-        const b = filterAst(node.expression)
+    function filterConditionalExpression(node: ts.ConditionalExpression): expr {
+        const condition = filterExpr(node.condition)
+        const e1 = filterExpr(node.whenTrue)
+        const e2 = filterExpr(node.whenFalse)
+        return mkConditional(condition, e1, e2)
+    }
+
+    function filterIfStatement(node: ts.IfStatement): stmt {
+        const b = filterExpr(node.expression)
         const e1 = filterBlockOrExpr(node.thenStatement)
         if (node.elseStatement) {
             const e2 = filterBlockOrExpr(node.elseStatement)
@@ -145,12 +198,12 @@ export function filter(sourceFile: ts.SourceFile): block {
     }
 
     function filterSpreadElement(node: ts.SpreadElement): expr {
-        const e = filterAst(node.expression)
+        const e = filterExpr(node.expression)
         return mkSpread(e)
     }
 
     function filterArrayLiteralExpression(node: ts.ArrayLiteralExpression): expr {
-        const elements = node.elements.map(filterAst)
+        const elements = node.elements.map(filterExpr)
         return mkArrayLit(elements)
     }
 
@@ -159,20 +212,28 @@ export function filter(sourceFile: ts.SourceFile): block {
         return mkObjLit(props)
     }
 
-    function filterReturnStatement(node: ts.ReturnStatement): expr {
+    function filterReturnStatement(node: ts.ReturnStatement): stmt {
         const expression = node.expression
         if (expression) {
-            return mkReturn2(filterAst(expression))
+            return mkReturn2(filterExpr(expression))
         }
         else {
             return mkReturn1
         }
     }
 
-    function filterFunctionDeclaration(node: ts.FunctionDeclaration): expr {
+    function filterExpressionStatement(node: ts.ExpressionStatement): stmt {
+        const expression = node.expression
+        return mkExpression(filterExpr(expression))
+    }
+
+    function filterFunctionDeclaration(node: ts.FunctionDeclaration): stmt {
         const parameters = node.parameters.map(filterParameter)
         const identifier = (node.name as ts.Identifier)
         const name: string = (identifier.escapedText as string)
+        if (babelFills.includes(name)) {
+            return mkNoOp
+        }
         let body
         if (node.body) {
             body = filterBlock(node.body)
@@ -183,12 +244,12 @@ export function filter(sourceFile: ts.SourceFile): block {
         return mkFunctionDecl(name, parameters, body)
     }
 
-    function filterArrowFunction(node: ts.ArrowFunction): expr {
+    function filterArrowFunction(node: ts.FunctionLikeDeclaration): expr {
         const parameters = node.parameters.map(filterParameter)
         let body: block
         if (node.body) {
             if (node.body.kind !== ts.SyntaxKind.Block) {
-                const innerBody = filterAst(node.body)
+                const innerBody = filterExpr(node.body)
                 body = mkBlock([mkReturn2(innerBody)])
             } else {
                 body = filterBlock(node.body)
@@ -211,7 +272,7 @@ export function filter(sourceFile: ts.SourceFile): block {
         )
     }
 
-    function filterVariableStatement(node: ts.VariableStatement): expr {
+    function filterVariableStatement(node: ts.VariableStatement): stmt {
         const varStatement: ts.VariableStatement = (node as ts.VariableStatement)
         const declarationList = varStatement.declarationList
         const declarations = declarationList.declarations
@@ -228,9 +289,9 @@ export function filter(sourceFile: ts.SourceFile): block {
         const initializer = declaration.initializer
         if (initializer === undefined) {
             console.error("Variable Declaration needs assignment!")
-            return mkUndefined
+            return mkExpression(mkUndefined)
         }
-        const initializerResult = filterAst(initializer)
+        const initializerResult = filterExpr(initializer)
         switch (identifier.kind) {
             case ts.SyntaxKind.Identifier:
                 const name: string = ((identifier as ts.Identifier).escapedText as string)
@@ -251,8 +312,8 @@ export function filter(sourceFile: ts.SourceFile): block {
     function filterCallExpression(node: ts.CallExpression): expr {
         const expression = node.expression
         const args = node.arguments
-        const expressionResult = filterAst(expression)
-        const argsResults = args.map(filterAst)
+        const expressionResult = filterExpr(expression)
+        const argsResults = args.map(filterExpr)
         return mkApp(expressionResult, argsResults)
     }
 

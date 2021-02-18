@@ -16,10 +16,18 @@ let program = Ast_j.block_of_string in_text
 
 let out_text = Pprint.print_block program ()
 
+let babelFills = ["_toConsumableArray"]
+
 let () =
   let b = program in
   print_endline "Input:\n";
   print_endline out_text;
+  let b = BasicTransformers.denop b in
+  print_endline "Nops removed:\n";
+  print_endline (Pprint.print_block b ());
+  let b = BasicTransformers.strip_functions babelFills b in
+  print_endline "Babel fills removed:\n";
+  print_endline (Pprint.print_block b ());
   let b = LambdaLifting.disambiguate_parameters b in
   printf "\nProgram after disambiguating parameters:\n\n";
   print_endline (Pprint.print_block b ());
@@ -29,7 +37,7 @@ let () =
   let (tab, b) = LambdaLifting.lift b in
   printf "\nExtracted %d function definitions:\n\n" (List.length tab);
   List.iter (fun (s, params, block) ->
-    print_endline (Pprint.print_expr (`FunctionDecl (s, params, block)) ())
+    print_endline (Pprint.print_stmt (`FunctionDecl (s, params, block)) ())
     ) tab;
   printf "\nProgram after lambda lifting:\n\n";
   print_endline (Pprint.print_block b ())

@@ -1,5 +1,5 @@
 (library
  (name asttransforms)
  (public_name ts-re-compiler.asttransforms)
- (modules LambdaLifting AstTransformers Util)
+ (modules LambdaLifting AstTransformers BasicTransformers Util)
  (libraries tsast stdio))

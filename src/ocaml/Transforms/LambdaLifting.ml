@@ -51,11 +51,11 @@ class parameter_disambiguater = object(self)
 
   method! block (bounds, name_tab) () = function
   | `Block blocks ->
-    let folder bounds e =
-      let bounds1 = add_bounds bounds e in
+    let folder bounds s =
+      let bounds1 = add_bounds bounds s in
       (* We pass the new binding down immediately *)
-      let ((), e1) = self#expr (bounds1, name_tab) () e in
-      (bounds1, e1)
+      let ((), s1) = self#stmt (bounds1, name_tab) () s in
+      (bounds1, s1)
     in
     let (_, blocks1) = List.fold_map ~f:folder ~init:bounds blocks in
     ((), `Block blocks1)
@@ -69,22 +69,6 @@ let disambiguate_parameters block =
   in block1
 
 
-class unprotecter = object
-  inherit [unit, unit] ast_transformer as super
-
-  method! expr () () = function
-  | `Protected(e) -> super#expr () () e
-  | e -> super#expr () () e
-
-end
-
-let the_unprotecter = new unprotecter
-
-(** [unprotect b] removes any [`Protect] markers form block [b] *)
-let unprotect b =
-  let _, b1 = the_unprotecter#block () () b in b1
-
-
 (** Folds declarations of the form
       [const f = (params) => { body }]
     into
@@ -94,9 +78,9 @@ let unprotect b =
 class const_arrow_folder = object
   inherit [unit, unit] ast_transformer as super
 
-  method! expr () () = function
+  method! stmt () () = function
   | `VarDecl(f, `Arrow(params, body)) ->  ((), `FunctionDecl(f, params, body))
-  | e -> super#expr () () e
+  | e -> super#stmt () () e
 
 end
 
@@ -121,12 +105,15 @@ let is_function_decl = function
 class free_vars_computer = object(self)
   inherit [string list, string list] ast_transformer as super
 
+  method! stmt bounds frees = function
+  (* We assume that functions bind their name recursively, everything else not. *)
+  | `FunctionDecl(s,_,_) as e -> super#stmt (s :: bounds) frees e
+  | s -> super#stmt bounds frees s
+
   method! expr bounds frees = function
   | `Var (s) as e ->
     let frees1 = if List.mem bounds s ~equal:String.equal then frees else s :: frees in
     (frees1, e)
-  (* We assume that functions bind their name recursively, everything else not. *)
-  | `FunctionDecl(s,_,_) as e -> super#expr (s :: bounds) frees e
   | e -> super#expr bounds frees e
 
   method! func bounds frees params b =
@@ -137,9 +124,9 @@ class free_vars_computer = object(self)
 
   method! block bounds frees = function
   | `Block blocks as b ->
-    let folder (bounds, frees) e =
-      let bounds1 = add_bounds bounds e
-      and (frees1, _) = self#expr bounds frees e in
+    let folder (bounds, frees) (s: stmt) =
+      let bounds1 = add_bounds bounds s
+      and (frees1, _) = self#stmt bounds frees s in
       (bounds1, frees1)
     in
     let (_bounds1, frees1) = List.fold ~f:folder ~init:(bounds, frees) blocks in
@@ -149,8 +136,8 @@ end
 
 let the_free_vars_computer = new free_vars_computer
 
-let free_vars ?(bounds=[]) e =
-  let (frees, _) = the_free_vars_computer#expr bounds [] e in
+let free_vars ?(bounds=[]) s =
+  let (frees, _) = the_free_vars_computer#stmt bounds [] s in
   List.dedup_and_sort ~compare:(String.compare) frees
 
 
@@ -209,7 +196,7 @@ class constant_propagater = object(self)
       {b Warning} Incomplete: other stmts also generate bindings
   *)
   val update_func_tab = fun tab -> function
-  | `VarDecl(s, `Arrow(params0, `Block [`App(`Var(f), args)])) ->
+  | `VarDecl(s, `Arrow(params0, `Block [`Expression `App(`Var(f), args)])) ->
     (Map.set tab ~key:s ~data:(params0, f, args), true)
   | `VarDecl(s, _)  -> (Map.remove tab s, false)
   | `FunctionDecl(s, _, _) -> (Map.remove tab s, false)
@@ -217,10 +204,10 @@ class constant_propagater = object(self)
 
   method! block func_tab () = function
   | `Block blocks ->
-    let folder func_tab e =
-      let (func_tab1, remove) = update_func_tab func_tab e
-      and (), e1 = self#expr func_tab () e in
-      (func_tab1, if remove then None else Some e1)
+    let folder func_tab (s: stmt) =
+      let (func_tab1, remove) = update_func_tab func_tab s
+      and (), s1 = self#stmt func_tab () s in
+      (func_tab1, if remove then None else Some s1)
     in
     let (_, blocks1_opt) = List.fold_map ~f:folder ~init:func_tab blocks in
     let blocks1 = List.filter_opt blocks1_opt in
@@ -266,7 +253,7 @@ class lifter(bounds: string list) = object(self)
   val make_partial = fun ((s:string), (params_0:parameter list), (params_ext: string list)) ->
     let ps = get_parameter_vars params_0 in
     let args = List.map ~f:(fun v -> `Var (v)) (params_ext @ ps) in
-    `Arrow(params_0, `Block [`App(`Var(s), args)])
+    `Arrow(params_0, `Block [`Expression (`App(`Var(s), args))])
 
   (** Extract a new function binding.
       @param name the name passed down the AST
@@ -281,12 +268,12 @@ class lifter(bounds: string list) = object(self)
         - [new_params] are [context_vars...params]
         - [b_new] is the potentially modified body [b]
   *)
-  method func1 = fun name params b e0 ->
+  method func1 = fun name params b s0 ->
     let (acc1, params1, b1) = super#func name None params b in (
       match acc1 with
       | Some r -> (r, Result(params1, b1))
       | None ->
-      let frees = free_vars ~bounds e0 in
+      let frees = free_vars ~bounds s0 in
       let new_params = make_params frees @ params1 in
       let name1 = invent_name1 bounds name in
       let e1 = make_partial (name1, params, frees)
@@ -295,24 +282,29 @@ class lifter(bounds: string list) = object(self)
     )
 
   method! expr name = function
-  | Some(result) -> fun e -> (Some (result), e)
+  | Some(result)  -> fun s -> (Some (result), s)
   | None as acc -> function
-    | `VarDecl (s, _) as e0 -> super#expr (name ^ "_" ^ s) acc e0
     | `Arrow (params, b) as e0 -> (
-      match self#func1 name params b e0 with
+      match self#func1 name params b (`Expression e0) with
       | (r, Result(params1, b1)) -> (Some r, `Arrow(params1, b1))
       | (r, Found e1) -> (Some r, e1)
       )
-    | `FunctionDecl(s, params, b) as e0 ->
+    | e -> super#expr name acc e
+
+  method! stmt name = function
+  | Some(result) -> fun s -> (Some (result), s)
+  | None as acc -> function
+    | `VarDecl (s, _) as s0 -> super#stmt (name ^ "_" ^ s) acc s0
+    | `FunctionDecl(s, params, b) as s0 ->
       let name1 = name ^ "_" ^ s in (
-      match self#func1 name1 params b e0 with
+      match self#func1 name1 params b s0 with
       | (r, Result(params1, b1)) -> (Some r, `FunctionDecl(s, params1, b1))
       | ((name2, params1, b1), Found e1) ->
         let decl = `VarDecl (s, e1) in
-        let b2 = insert_block decl b1 |> propagate_fun_bindings |> unprotect in
+        let b2 = insert_block decl b1 |> propagate_fun_bindings |> BasicTransformers.unprotect in
         (Some (name2, params1, b2), `VarDecl (s, e1))
       )
-    | e -> super#expr name acc e
+    | s -> super#stmt name acc s
 end
 
 let lift b =
@@ -335,4 +327,4 @@ let lift b =
     )
   in
   let (tab, b1) = iter [] b 0 in
-  (tab, unprotect b1)
+  (tab, BasicTransformers.unprotect b1)

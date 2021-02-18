@@ -1,29 +1,39 @@
 (* Auto-generated from "Ast.atd" *)
               [@@@ocaml.warning "-27-32-35-39"]
 
-type binop = [ `Eq2 | `Eq3 | `Neq2 | `Neq3 | `Times | `Plus | `Minus | `Div ]
+type binop = [
+    `Eq | `Eq2 | `Eq3 | `Neq2 | `Neq3 | `Times | `Plus | `Minus | `Div
+]
 
-type block = [ `Block of (expr list) ]
+type block = [ `Block of (stmt list) ]
 
 and expr = [
-    `VarDecl of (string * expr)
-  | `Var of (string)
+    `Var of (string)
   | `App of (expr * expr list)
+  | `PropertyAccess of (expr * string)
+  | `ElementAccess of (expr * expr)
   | `Number of (float)
   | `String of (string)
-  | `Undefined
   | `Null
-  | `FunctionDecl of (string * parameter list * block)
-  | `Return of (expr option)
+  | `Undefined
   | `ObjLit of (parameter list)
   | `ArrayLit of (expr list)
-  | `VarObjectPatternDecl of (string list * expr)
-  | `VarArrayPatternDecl of (string list * expr)
   | `Spread of (expr)
-  | `If of (expr * block * block option)
+  | `Conditional of (expr * expr * expr)
   | `Binop of (binop * expr * expr)
   | `Arrow of (parameter list * block)
   | `Protected of expr
 ]
 
 and parameter = [ `Parameter of (string * bool * expr option) ]
+
+and stmt = [
+    `Expression of (expr)
+  | `VarDecl of (string * expr)
+  | `FunctionDecl of (string * parameter list * block)
+  | `Return of (expr option)
+  | `If of (expr * block * block option)
+  | `VarObjectPatternDecl of (string list * expr)
+  | `VarArrayPatternDecl of (string list * expr)
+  | `NoOp
+]
