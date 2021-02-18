@@ -1,0 +1,17 @@
+#!/bin/bash
+
+cd src
+
+atdgen -o tsast/Ast -t tsast/Ast.atd
+atdgen -o ocaml/Ast -j tsast/Ast.atd
+atdgen -o Ast -bs tsast/Ast.atd
+
+gsed -i '3i \\nopen Tsast' ocaml/Ast_j.ml
+gsed -i '3i \\nopen Tsast' ocaml/Ast_j.mli
+gsed -i 's/type binop/type [@gentype] binop/' tsast/Ast_t.mli
+gsed -i 's/type block/type [@gentype.opaque] block/' tsast/Ast_t.mli
+gsed -i 's/and expr/and [@gentype.opaque] expr/' tsast/Ast_t.mli
+gsed -i 's/and stmt/and [@gentype.opaque] stmt/' tsast/Ast_t.mli
+gsed -i 's/and parameter/and [@gentype.opaque] parameter/' tsast/Ast_t.mli
+
+cd ..
