@@ -40,4 +40,11 @@ let () =
     print_endline (Pprint.print_stmt (`FunctionDecl (s, params, block)) ())
     ) tab;
   printf "\nProgram after lambda lifting:\n\n";
-  print_endline (Pprint.print_block b ())
+  print_endline (Pprint.print_block b ());
+  let (tab, b) = DisambiguateFunctions.disambigute_funs (tab, b) in
+  printf "\nDisambiguated %d function definitions:\n\n" (List.length tab);
+  List.iter (fun (s, params, block) ->
+    print_endline (Pprint.print_stmt (`FunctionDecl (s, params, block)) ())
+    ) tab;
+  printf "\nProgram after function disambiguation:\n\n";
+  print_endline (Pprint.print_block b ());
