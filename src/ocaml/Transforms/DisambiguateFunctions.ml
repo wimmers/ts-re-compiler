@@ -1,8 +1,6 @@
 open Base
 open Tsast
-open Ast_t
-
-type fun_decl = (string * parameter list * block)
+open BasicTypes
 
 let split_optionals params =
   let optionals, regulars =

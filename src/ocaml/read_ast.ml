@@ -18,6 +18,13 @@ let out_text = Pprint.print_block program ()
 
 let babelFills = ["_toConsumableArray"]
 
+let print_program (tab, b) =
+  List.iter (fun (s, params, block) ->
+    print_endline (Pprint.print_stmt (`FunctionDecl (s, params, block)) ())
+  ) tab;
+  print_endline "\n";
+  print_endline (Pprint.print_block b ())
+
 let () =
   let b = program in
   print_endline "Input:\n";
@@ -28,23 +35,21 @@ let () =
   let b = BasicTransformers.strip_functions babelFills b in
   print_endline "Babel fills removed:\n";
   print_endline (Pprint.print_block b ());
+  let b = PullIf.complete_if b in
+  print_endline "If completed:\n";
+  print_endline (Pprint.print_block b ());
   let b = LambdaLifting.disambiguate_parameters b in
   printf "\nProgram after disambiguating parameters:\n\n";
   print_endline (Pprint.print_block b ());
   let b = LambdaLifting.fold_const_arrows b in
   printf "\nProgram after const-arrow folding:\n\n";
   print_endline (Pprint.print_block b ());
-  let (tab, b) = LambdaLifting.lift b in
-  printf "\nExtracted %d function definitions:\n\n" (List.length tab);
-  List.iter (fun (s, params, block) ->
-    print_endline (Pprint.print_stmt (`FunctionDecl (s, params, block)) ())
-    ) tab;
+  let p = LambdaLifting.lift b in
   printf "\nProgram after lambda lifting:\n\n";
-  print_endline (Pprint.print_block b ());
-  let (tab, b) = DisambiguateFunctions.disambigute_funs (tab, b) in
-  printf "\nDisambiguated %d function definitions:\n\n" (List.length tab);
-  List.iter (fun (s, params, block) ->
-    print_endline (Pprint.print_stmt (`FunctionDecl (s, params, block)) ())
-    ) tab;
-  printf "\nProgram after function disambiguation:\n\n";
-  print_endline (Pprint.print_block b ());
+  print_program p;
+  let p = PullIf.pull_if p in
+  printf "\nProgram after pulling out ifs:\n\n";
+  print_program p;
+  let p = DisambiguateFunctions.disambigute_funs p in
+  printf "\nProgram after disambiguating functions with optional parameters:\n\n";
+  print_program p;

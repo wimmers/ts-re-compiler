@@ -1,7 +1,8 @@
-open Tsast;;
-open Ast_t;;
-open AstTransformers;;
-open Base;;
+open Tsast
+open Ast_t
+open AstTransformers
+open BasicTypes
+open Base
 
 let add_bounds = fun bounds -> function
   | `VarDecl (s, _) -> s :: bounds
@@ -10,15 +11,9 @@ let add_bounds = fun bounds -> function
   | `VarArrayPatternDecl (xs, _) -> xs @ bounds
   | _ -> bounds
 
-let invent_name bounds s =
-  let rec loop n =
-    let name = s ^ "$" ^ Int.to_string n in
-    if List.mem ~equal:(String.equal) bounds name then loop (n + 1) else name
-  in if List.mem ~equal:(String.equal) bounds s then Some (loop 0) else None
-
 let disambiguate_parameter (bounds, name_tab as arg) = function
 | `Parameter (s, is_opt, e) as e0 -> (
-  match invent_name bounds s with
+  match Util.invent_name bounds s with
   | None -> (arg, e0)
   | Some s1 ->
     let name_tab1 = Map.set name_tab ~key:s ~data:s1
@@ -26,7 +21,6 @@ let disambiguate_parameter (bounds, name_tab as arg) = function
     in ((bounds1, name_tab1), `Parameter (s1, is_opt, e))
 )
 
-type 'a string_tab = (string, 'a, String.comparator_witness) Base.Map.t
 
 (** Transforms functions such that function parameters do not capture bound variables.
 *)
@@ -243,10 +237,6 @@ type ('a, 'b) lifter_result = Result of 'a | Found of 'b
 let insert_block e = function
 | `Block b -> `Block (e :: b)
 
-let invent_name1 bounds s = match invent_name bounds s with
-| None -> s
-| Some(s1) -> s1
-
 class lifter(bounds: string list) = object(self)
   inherit [string, (string * parameter list * block) option] ast_transformer as super
 
@@ -275,7 +265,7 @@ class lifter(bounds: string list) = object(self)
       | None ->
       let frees = free_vars ~bounds s0 in
       let new_params = make_params frees @ params1 in
-      let name1 = invent_name1 bounds name in
+      let name1 = Util.invent_name1 bounds name in
       let e1 = make_partial (name1, params, frees)
       and r = (name1, new_params, b1) in
       (r, Found e1)
