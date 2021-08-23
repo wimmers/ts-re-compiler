@@ -1,4 +1,6 @@
 node_modules
 lib
-src/**/*.js
+src/tsast/*.js
+src/babeled
+src/*.js
 _build
