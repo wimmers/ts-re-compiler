@@ -2,7 +2,7 @@
   "exclude": [
     "node_modules",
     "_build",
-    "src/examples/babel"
+    "src/babeled"
   ],
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig.json to read more about this file */
