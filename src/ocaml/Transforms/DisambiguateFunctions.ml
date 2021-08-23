@@ -13,7 +13,7 @@ let split_optionals params =
   in if Poly.(regulars @ optionals <> params) then
     raise (Invalid_argument "Optional parameters cannot appear before regular ones!")
   else
-    (regulars, optionals)
+    regulars, optionals
 
 let extend_body optionals = function
 | `Block stmts ->
@@ -44,13 +44,14 @@ let disambigute_fun (s, params, block) =
     let range = List.range ~stop:`inclusive 0 n_optional in
     let new_funs = List.map range ~f:(
       fun n ->
-        let optionals = List.drop optionals n in
+        let optionals = List.drop optionals n
+        and non_optionals = List.take optionals n in
         let block = extend_body optionals block in
         let n_params = n_regular + n in
-        let non_optionals = List.take optionals n |> optionals_to_regulars in
+        let non_optionals = optionals_to_regulars non_optionals in
         let new_params = regulars @ non_optionals in
         let name = s ^ "_" ^ Int.to_string n_params in
-        (name, new_params, block)
+        name, new_params, block
     ) in
     n_regular, (new_funs: fun_decl list)
 
@@ -73,21 +74,26 @@ method! expr down acc = function
 | `App(`Var(f), es) -> super#expr down acc (substitute_fun fn_map f es) 
 | e -> super#expr down acc e
 
+method fun_decl: fun_decl -> fun_decl = fun (s, params, body) -> 
+  let (), body1 = super#block () () body in
+  let params1 = List.map params ~f:(fun p -> snd (super#parameter () () p)) in
+  s, params1, body1
+
 end
 
 let disambigute_funs (funs, block) =
-  let funs_disambiguated = List.map funs ~f:
-  (fun (s, params, block) ->
-    let n_regular, new_funs = disambigute_fun (s, params, block) in
-    (s, n_regular, new_funs)
+  let funs_disambiguated = List.map funs ~f:(
+    fun (s, params, block) ->
+      let n_regular, new_funs = disambigute_fun (s, params, block) in
+      s, n_regular, new_funs
   ) in
   let all_new_funs = List.concat_map funs_disambiguated ~f:(fun (_, _, x) -> x) in
   let fn_map = Map.Poly.of_alist_exn (List.map funs_disambiguated ~f:(
     fun (s, n_regular, new_funs) ->
       let fun_names = List.map new_funs ~f:(fun (name, _, _) -> name) in
-      (s, (n_regular, fun_names))
-  )
-  ) in
+      s, (n_regular, fun_names)
+  )) in
   let substitution = new fun_substitution fn_map in
   let _, new_block = substitution#block () () block in
-  (all_new_funs, new_block)
+  let all_new_funs = List.map all_new_funs ~f:substitution#fun_decl in
+  all_new_funs, new_block
