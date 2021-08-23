@@ -1,14 +1,16 @@
 open Printf
 open Tsast
 open Asttransforms
+open Simple_fun
 
 let () =
-  if Array.length Sys.argv != 2 then begin
-    printf "Usage: %s IN_FILE\n" Sys.argv.(0);
+  if Array.length Sys.argv != 3 then begin
+    printf "Usage: %s IN_FILE OUT_FILE\n" Sys.argv.(0);
     exit 1
   end
 
 let file_name = Sys.argv.(1)
+let out_name = Sys.argv.(2)
 
 let in_text = Stdio.In_channel.read_all file_name
 
@@ -53,3 +55,11 @@ let () =
   let p = DisambiguateFunctions.disambigute_funs p in
   printf "\nProgram after disambiguating functions with optional parameters:\n\n";
   print_program p;
+  let p = ToSimpleFun.letify_program p in
+  (* Add empty pre-/post-conditions *)
+  let funs, prop = p in
+  let funs = Base.List.map funs ~f:(fun (s, signature, f) -> (s, signature, None, None, f)) in
+  let p = funs, prop in
+  Format.printf "\nProgram after conversion:\n%a\n@." SimpleProgram.pp_program p;
+  let sexp = SimpleProgram.sexp_of_program p in
+  Stdio.Out_channel.write_all out_name ~data:(Base.Sexp.to_string sexp)
