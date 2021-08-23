@@ -24,3 +24,5 @@ let invent_name bounds s =
 let invent_name1 bounds s = match invent_name bounds s with
 | None -> s
 | Some(s1) -> s1
+
+let butlast xs = List.sub xs ~pos:0 ~len:(List.length xs - 1)

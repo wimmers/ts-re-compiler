@@ -9,3 +9,4 @@ val string_of_string_list : string list -> string
 val print_string_list : string list -> unit
 val invent_name: string list -> string -> string option
 val invent_name1: string list -> string -> string
+val butlast: 'a list -> 'a list
