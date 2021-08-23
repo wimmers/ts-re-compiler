@@ -36,8 +36,22 @@ const inorder: <T>(t: tree<T>) => T[] = (t) => {
     if (t == leaf) {
         return []
     }
+
     const { value, left, right } = t
+
     return [...inorder(left), value, ...inorder(right)]
 }
 
-console.log(inorder(t1))
+// console.assert(inorder(t1) === [2, 1, 5, 3, 5, 4])
+// console.assert(inorder(leaf) === [])
+const l = inorder(n1.left)
+// const l = [] as Number[]
+const r = inorder(n1.right)
+// const r = [] as Number[] // -> yields undefined
+const v = [n1.value]
+const x = [...[], n1.value, ...r]
+// console.assert(inorder(n3) == [5,3,5,4])
+// console.assert(inorder(t1) === [2, 1, 5, 3, 5, 4])
+console.assert(inorder(t) == [1,2,3,4,5])
+// const x = [...[], 5, ...[]]
+// console.assert(x === [4])
