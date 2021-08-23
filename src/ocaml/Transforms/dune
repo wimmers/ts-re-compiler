@@ -1,4 +1,4 @@
 (library
  (name asttransforms)
  (public_name ts-re-compiler.asttransforms)
- (libraries tsast stdio))
+ (libraries tsast stdio simple-fun.simple_fun))

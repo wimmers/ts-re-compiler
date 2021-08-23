@@ -82,3 +82,5 @@ However, the `.merlin` file is probably needed to get all features for ReScript 
   One way to fix it is to use `.js` imports in the *original TS file* (like [so](https://github.com/microsoft/TypeScript/issues/41887)).
   The other is to update `tsconfig` like [so](https://github.com/Microsoft/TypeScript/issues/27481#issuecomment-449673378).
   This problem vanishes as soon as we use `esm`.
+- The path to module `src/mybabel` is set as an absolute path in `babel.config.json` and needs to be adopted to your machine.
+- The module `simple_fun` needs to be installed locally via opam.
