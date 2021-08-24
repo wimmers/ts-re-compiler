@@ -41,6 +41,14 @@ let write_binop = (
     Atdgen_codec_runtime.Encode.constr0 "Minus"
     | `Div ->
     Atdgen_codec_runtime.Encode.constr0 "Div"
+    | `Less ->
+    Atdgen_codec_runtime.Encode.constr0 "Less"
+    | `Greater ->
+    Atdgen_codec_runtime.Encode.constr0 "Greater"
+    | `And ->
+    Atdgen_codec_runtime.Encode.constr0 "And"
+    | `Or ->
+    Atdgen_codec_runtime.Encode.constr0 "Or"
   )
 )
 let read_binop = (
@@ -98,6 +106,30 @@ let read_binop = (
       "Div"
       ,
         `Single (`Div)
+      )
+    ;
+      (
+      "Less"
+      ,
+        `Single (`Less)
+      )
+    ;
+      (
+      "Greater"
+      ,
+        `Single (`Greater)
+      )
+    ;
+      (
+      "And"
+      ,
+        `Single (`And)
+      )
+    ;
+      (
+      "Or"
+      ,
+        `Single (`Or)
       )
   ]
 )

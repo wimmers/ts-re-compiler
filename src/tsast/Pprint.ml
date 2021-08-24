@@ -25,6 +25,10 @@ in binop (match op with
 | `Minus -> "-"
 | `Div -> "/"
 | `Times -> "*"
+| `Less -> "<"
+| `Greater -> ">"
+| `And -> "&&"
+| `Or -> "||"
 (* | _ -> "<...>" *)
 )
 

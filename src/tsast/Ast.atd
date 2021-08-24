@@ -8,6 +8,10 @@ type binop = [
   | Plus
   | Minus
   | Div
+  | Less
+  | Greater
+  | And
+  | Or
 ]
 
 type stmt = [

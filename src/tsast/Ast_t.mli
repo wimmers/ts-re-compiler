@@ -3,6 +3,7 @@
 
 type [@gentype] binop = [
     `Eq | `Eq2 | `Eq3 | `Neq2 | `Neq3 | `Times | `Plus | `Minus | `Div
+  | `Less | `Greater | `And | `Or
 ]
 
 type [@gentype.opaque] block = [ `Block of (stmt list) ]

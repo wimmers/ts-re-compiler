@@ -41,6 +41,10 @@ let write_binop = (
       | `Plus -> Bi_outbuf.add_string ob "<\"Plus\">"
       | `Minus -> Bi_outbuf.add_string ob "<\"Minus\">"
       | `Div -> Bi_outbuf.add_string ob "<\"Div\">"
+      | `Less -> Bi_outbuf.add_string ob "<\"Less\">"
+      | `Greater -> Bi_outbuf.add_string ob "<\"Greater\">"
+      | `And -> Bi_outbuf.add_string ob "<\"And\">"
+      | `Or -> Bi_outbuf.add_string ob "<\"Or\">"
 )
 let string_of_binop ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
@@ -88,6 +92,22 @@ let read_binop = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
               `Div
+            | "Less" ->
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_gt p lb;
+              `Less
+            | "Greater" ->
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_gt p lb;
+              `Greater
+            | "And" ->
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_gt p lb;
+              `And
+            | "Or" ->
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_gt p lb;
+              `Or
             | x ->
               Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
@@ -111,6 +131,14 @@ let read_binop = (
               `Minus
             | "Div" ->
               `Div
+            | "Less" ->
+              `Less
+            | "Greater" ->
+              `Greater
+            | "And" ->
+              `And
+            | "Or" ->
+              `Or
             | x ->
               Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
