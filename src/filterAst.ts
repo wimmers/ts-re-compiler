@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import { stmt, expr, parameter, block, binop } from './tsast/Ast_t.gen';
 import {
-    mkApp, mkNull, mkNumber, mkUndefined, mkVar, mkVarDecl, mkParameter1, mkParameter2,
+    mkApp, mkNull, mkNumber, mkString, mkUndefined, mkVar, mkVarDecl, mkParameter1, mkParameter2,
     mkFunctionDecl, mkBlock,
     mkReturn1, mkReturn2, mkObjLit, mkArrayLit, mkSpread, mkIf1, mkIf2, mkBinop, mkArrow,
     mkObjectBindingPattern, mkArrayBindingPattern, mkNoOp, mkExpression, mkConditional, mkElementAccess, mkPropertyAccess
@@ -26,7 +26,8 @@ export function filter(sourceFile: ts.SourceFile): block {
         const param = (node as (ts.ParameterDeclaration | ts.PropertyAssignment))
         const isOpt = param.questionToken !== undefined
         const init = param.initializer
-        const name = ((param.name as ts.Identifier).escapedText as string)
+        const name = (param.name as ts.Identifier).escapedText as string
+            || (param.name as ts.StringLiteral).text as string
         if (init !== undefined) {
             return mkParameter2(name, isOpt, filterExpr(init))
         } else {
@@ -87,6 +88,12 @@ export function filter(sourceFile: ts.SourceFile): block {
 
             case ts.SyntaxKind.NumericLiteral:
                 return filterNumericLiteral(node as ts.NumericLiteral)
+            
+            case ts.SyntaxKind.PrefixUnaryExpression:
+                return filterNumericLiteral(node as ts.PrefixUnaryExpression)
+
+            case ts.SyntaxKind.StringLiteral:
+                return filterStringLiteral(node as ts.StringLiteral)
 
             case ts.SyntaxKind.ObjectLiteralExpression:
                 return filterObjectLiteralExpression(node as ts.ObjectLiteralExpression)
@@ -123,9 +130,13 @@ export function filter(sourceFile: ts.SourceFile): block {
         return mkVar(name)
     }
 
-    function filterNumericLiteral(node: ts.NumericLiteral): expr {
+    function filterNumericLiteral(node: ts.NumericLiteral | ts.PrefixUnaryExpression): expr {
         const num = parseFloat(node.getText())
         return mkNumber(num)
+    }
+
+    function filterStringLiteral(node: ts.StringLiteral): expr {
+        return mkString(node.text)
     }
 
     function filterElementAccessExpression(node: ts.ElementAccessExpression): expr {
@@ -172,6 +183,18 @@ export function filter(sourceFile: ts.SourceFile): block {
                 break;
             case ts.SyntaxKind.AsteriskToken:
                 binop = "Times"
+                break;
+            case ts.SyntaxKind.GreaterThanToken:
+                binop = "Greater"
+                break;
+            case ts.SyntaxKind.LessThanToken:
+                binop = "Less"
+                break;
+            case ts.SyntaxKind.AmpersandAmpersandToken:
+                binop = "And"
+                break;
+            case ts.SyntaxKind.BarBarToken:
+                binop = "Or"
                 break;
             default:
                 throw `Unknown binary operator ${node.operatorToken}`;
