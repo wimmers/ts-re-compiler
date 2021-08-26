@@ -297,7 +297,7 @@ class lifter(bounds: string list) = object(self)
     | s -> super#stmt name acc s
 end
 
-let lift b =
+let lift ?tab:(tab=[]) b =
   let rec iter tab b n =
     if n > 10 then
       raise (Invalid_argument "Seems like we have a termination problem!")
@@ -316,5 +316,5 @@ let lift b =
       iter (r :: tab) b2 (n + 1)
     )
   in
-  let (tab, b1) = iter [] b 0 in
+  let (tab, b1) = iter tab b 0 in
   (tab, BasicTransformers.unprotect b1)

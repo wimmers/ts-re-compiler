@@ -49,6 +49,9 @@ let () =
   let p = LambdaLifting.lift b in
   printf "\nProgram after lambda lifting:\n\n";
   print_program p;
+  let p = WhileLifting.lift_program p in
+  print_endline "While loops lifted:\n";
+  print_program p;
   let p = PullIf.pull_if p in
   printf "\nProgram after pulling out ifs:\n\n";
   print_program p;

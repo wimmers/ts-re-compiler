@@ -20,6 +20,10 @@ class ['b,'a] ast_transformer = object(self)
           let (acc3, e22) = self#block down acc2 e2 in
           (acc3, `If(b1, e11, Some e22))
     )
+  | `While(b, e) ->
+    let acc1, b1 = self#expr down acc b in
+    let acc2, e1 = self#block down acc1 e in
+    acc2, `While (b1, e1)
   | `Return(Some e) ->
     let (acc1, e1) = self#expr down acc e in
     (acc1, `Return(Some e1))
@@ -98,6 +102,7 @@ class ['a] ast_folder = object(self)
         | None -> acc
         | Some e2 -> self#block acc e2
   )
+  | `While(b, e) -> self#expr acc b |> fun acc -> self#block acc e
   | _ -> acc
 
   method expr (acc: 'a) = function
