@@ -11,6 +11,7 @@ export mkNoOp: Ast_t.stmt = #NoOp
 export mkExpression: Ast_t.expr => Ast_t.stmt = e => #Expression(e)
 export mkIf1: (_, _) => Ast_t.stmt = (b, e) => #If(b, e, None)
 export mkIf2: (_, _, _) => Ast_t.stmt = (b, e1, e2) => #If(b, e1, e2)
+export mkWhile: (_, _) => Ast_t.stmt = (b, e) => #While(b, e)
 
 export mkVar: string => Ast_t.expr = s => #Var(s)
 export mkApp: (_, _) => Ast_t.expr = (e, xs) => #App(e, Array.to_list(xs))

@@ -358,6 +358,16 @@ and write_stmt js = (
           write__3
         )
     ) x
+    | `While x ->
+    Atdgen_codec_runtime.Encode.constr1 "While" (
+      Atdgen_codec_runtime.Encode.tuple2
+        (
+          write_expr
+        )
+        (
+          write_block
+        )
+    ) x
     | `VarObjectPatternDecl x ->
     Atdgen_codec_runtime.Encode.constr1 "VarObjectPatternDecl" (
       Atdgen_codec_runtime.Encode.tuple2
@@ -713,6 +723,21 @@ and read_stmt js = (
             read__3
           )
         |> Atdgen_codec_runtime.Decode.map (fun x -> ((`If x) : _))
+        )
+      )
+    ;
+      (
+      "While"
+      ,
+        `Decode (
+        Atdgen_codec_runtime.Decode.tuple2
+          (
+            read_expr
+          )
+          (
+            read_block
+          )
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`While x) : _))
         )
       )
     ;

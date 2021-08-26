@@ -113,6 +113,16 @@ function
         print_space ();
         pprint_block ppf e2
     | None -> ())
+| `While(b, e) ->
+    kwd "while";
+    print_space ();
+    kwd "(";
+        open_hovbox 2;
+        pprint_expr ppf b;
+        close_box ();
+    kwd ")";
+    print_space ();
+    pprint_block ppf e
 | `NoOp -> kwd "‹nop›"
 | `Expression(e) -> pprint_expr ppf e
 

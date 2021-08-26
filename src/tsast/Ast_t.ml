@@ -34,6 +34,7 @@ and stmt = [
   | `FunctionDecl of (string * parameter list * block)
   | `Return of (expr option)
   | `If of (expr * block * block option)
+  | `While of (expr * block)
   | `VarObjectPatternDecl of (string list * expr)
   | `VarArrayPatternDecl of (string list * expr)
   | `NoOp
