@@ -3,7 +3,7 @@ import { stmt, expr, parameter, block, binop } from './tsast/Ast_t.gen';
 import {
     mkApp, mkNull, mkNumber, mkString, mkUndefined, mkVar, mkVarDecl, mkParameter1, mkParameter2,
     mkFunctionDecl, mkBlock,
-    mkReturn1, mkReturn2, mkObjLit, mkArrayLit, mkSpread, mkIf1, mkIf2, mkBinop, mkArrow,
+    mkReturn1, mkReturn2, mkObjLit, mkArrayLit, mkSpread, mkIf1, mkIf2, mkWhile, mkBinop, mkArrow,
     mkObjectBindingPattern, mkArrayBindingPattern, mkNoOp, mkExpression, mkConditional, mkElementAccess, mkPropertyAccess
 } from './tsast/Ast.gen';
 
@@ -66,6 +66,9 @@ export function filter(sourceFile: ts.SourceFile): block {
 
             case ts.SyntaxKind.IfStatement:
                 return filterIfStatement(node as ts.IfStatement)
+            
+            case ts.SyntaxKind.WhileStatement:
+                return filterWhileStatement(node as ts.WhileStatement)
 
             case ts.SyntaxKind.ExpressionStatement:
                 return filterExpressionStatement(node as ts.ExpressionStatement)
@@ -220,6 +223,12 @@ export function filter(sourceFile: ts.SourceFile): block {
         }
     }
 
+    function filterWhileStatement(node: ts.WhileStatement): stmt {
+        const b = filterExpr(node.expression)
+        const e = filterBlockOrExpr(node.statement)
+        return mkWhile(b, e)
+    }
+
     function filterSpreadElement(node: ts.SpreadElement): expr {
         const e = filterExpr(node.expression)
         return mkSpread(e)
@@ -247,7 +256,19 @@ export function filter(sourceFile: ts.SourceFile): block {
 
     function filterExpressionStatement(node: ts.ExpressionStatement): stmt {
         const expression = node.expression
+        if (expression.kind === ts.SyntaxKind.BinaryExpression
+            && (expression as ts.BinaryExpression).operatorToken.kind === ts.SyntaxKind.EqualsToken) {
+            return filterAssignmentExpressionStatement(node)
+        }
         return mkExpression(filterExpr(expression))
+    }
+
+    function filterAssignmentExpressionStatement(node: ts.ExpressionStatement): stmt {
+        let expression = node.expression as ts.BinaryExpression
+        let left = expression.left
+        let name = left.getText()
+        let right = expression.right
+        return mkVarDecl(name, filterExpr(right))
     }
 
     function filterFunctionDeclaration(node: ts.FunctionDeclaration): stmt {
@@ -302,11 +323,11 @@ export function filter(sourceFile: ts.SourceFile): block {
         if (declarations.length !== 1) {
             console.error("Multi-declarations are not supported")
         }
-        if (declarationList.flags & ts.NodeFlags.Const) {
-        }
-        else {
-            console.error("Unsupported variable declaration keyword!", node.getText(sourceFile))
-        }
+        // if (declarationList.flags & (ts.NodeFlags.Const | ts.NodeFlags.Let)) {
+        // }
+        // else {
+        //     console.error("Unsupported variable declaration keyword!", node.getText(sourceFile))
+        // }
         const declaration = declarations[0]
         const identifier = declaration.name
         const initializer = declaration.initializer
