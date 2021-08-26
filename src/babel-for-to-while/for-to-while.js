@@ -9,10 +9,10 @@ module.exports = function ({ types: t }) {
                 let body = node.body
                 if (incrementor) {
                     const incrementorStatement = t.expressionStatement(incrementor)
-                    if (t.isStatement(node.body)) {
-                        body = t.blockStatement([node.body, incrementorStatement])
-                    } else if (t.isBlockStatement(node.body)) {
+                    if (t.isBlockStatement(node.body)) {
                         path.get('body').pushContainer('body', incrementorStatement);
+                    } else if (t.isStatement(node.body)) {
+                        body = t.blockStatement([node.body, incrementorStatement])
                     } else { // XXX Is this branch reachable?
                         throw "Unexpected body type in for-loop. Should be statement or block."
                     }
