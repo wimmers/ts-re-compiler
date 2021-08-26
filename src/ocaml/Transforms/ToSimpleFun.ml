@@ -34,6 +34,10 @@ let conv_op = function
   | `Plus -> Plus
   | `Minus -> Minus
   | `Div -> Div
+  | `Greater -> Greater
+  | `Less -> Less
+  | `Or -> Or
+  | `And -> And
   (* | op -> raise (Invalid_argument (asprintf "Unsupported binop: %a" pprint_binop op)) *)
 
 class internals_compiler = object(self)
