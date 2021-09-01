@@ -82,5 +82,9 @@ However, the `.merlin` file is probably needed to get all features for ReScript 
   One way to fix it is to use `.js` imports in the *original TS file* (like [so](https://github.com/microsoft/TypeScript/issues/41887)).
   The other is to update `tsconfig` like [so](https://github.com/Microsoft/TypeScript/issues/27481#issuecomment-449673378).
   This problem vanishes as soon as we use `esm`.
-- The paths to modules `src/mybabel`, `src/babel-for-to-while`, and `src/babel-rename` are set as absolute paths in `babel.config.json`, and need to be adopted to your machine.
+- The paths to the Babel plugins in `src` are set as absolute paths in `babel.config.json`, and need to be adopted to your machine. They should go after all official Babel plugins, in the following order:
+  - `mybabel`
+  - `babel-for-to-while`
+  - `babel-transform-update-expression`
+  - `babel-rename`
 - The module `simple_fun` needs to be installed locally via opam.
