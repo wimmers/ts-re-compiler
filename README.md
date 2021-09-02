@@ -86,5 +86,7 @@ However, the `.merlin` file is probably needed to get all features for ReScript 
   - `mybabel`
   - `babel-for-to-while`
   - `babel-transform-update-expression`
+  - `babel-transform-object-spread`
+  - `babel-transform-unary-expression`
   - `babel-rename`
 - The module `simple_fun` needs to be installed locally via opam.
