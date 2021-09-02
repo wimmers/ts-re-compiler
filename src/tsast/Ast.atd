@@ -9,6 +9,8 @@ type binop = [
   | Minus
   | Div
   | Less
+  | LessEq
+  | GreaterEq
   | Greater
   | And
   | Or

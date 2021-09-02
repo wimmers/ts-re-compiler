@@ -26,6 +26,8 @@ in binop (match op with
 | `Div -> "/"
 | `Times -> "*"
 | `Less -> "<"
+| `LessEq -> "<="
+| `GreaterEq -> ">="
 | `Greater -> ">"
 | `And -> "&&"
 | `Or -> "||"

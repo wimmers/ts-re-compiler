@@ -3,7 +3,7 @@
 
 type binop = [
     `Eq | `Eq2 | `Eq3 | `Neq2 | `Neq3 | `Times | `Plus | `Minus | `Div
-  | `Less | `Greater | `And | `Or
+  | `Less | `LessEq | `GreaterEq | `Greater | `And | `Or
 ]
 
 type block = [ `Block of (stmt list) ]

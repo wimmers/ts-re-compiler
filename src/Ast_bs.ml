@@ -43,6 +43,10 @@ let write_binop = (
     Atdgen_codec_runtime.Encode.constr0 "Div"
     | `Less ->
     Atdgen_codec_runtime.Encode.constr0 "Less"
+    | `LessEq ->
+    Atdgen_codec_runtime.Encode.constr0 "LessEq"
+    | `GreaterEq ->
+    Atdgen_codec_runtime.Encode.constr0 "GreaterEq"
     | `Greater ->
     Atdgen_codec_runtime.Encode.constr0 "Greater"
     | `And ->
@@ -112,6 +116,18 @@ let read_binop = (
       "Less"
       ,
         `Single (`Less)
+      )
+    ;
+      (
+      "LessEq"
+      ,
+        `Single (`LessEq)
+      )
+    ;
+      (
+      "GreaterEq"
+      ,
+        `Single (`GreaterEq)
       )
     ;
       (

@@ -44,12 +44,14 @@ export function filter(sourceFile: ts.SourceFile): block {
         return mkBlock(stmts)
     }
 
-    function filterBlockOrExpr(node: ts.Node): block {
+    function filterBlockOrExprOrStatement(node: ts.Node): block {
         if (ts.isBlock(node)) {
             return filterBlock(node)
+        } else if (ts.isExpressionStatement(node)) {
+            return mkBlock([mkExpression(filterExpr(node))])
         }
         else {
-            return mkBlock([mkExpression(filterExpr(node))])
+            return mkBlock([filterStmt(node)])
         }
     }
 
@@ -187,11 +189,17 @@ export function filter(sourceFile: ts.SourceFile): block {
             case ts.SyntaxKind.AsteriskToken:
                 binop = "Times"
                 break;
-            case ts.SyntaxKind.GreaterThanToken:
-                binop = "Greater"
-                break;
             case ts.SyntaxKind.LessThanToken:
                 binop = "Less"
+                break;
+            case ts.SyntaxKind.LessThanEqualsToken:
+                binop = "LessEq"
+                break;
+            case ts.SyntaxKind.GreaterThanEqualsToken:
+                binop = "GreaterEq"
+                break;
+            case ts.SyntaxKind.GreaterThanToken:
+                binop = "Greater"
                 break;
             case ts.SyntaxKind.AmpersandAmpersandToken:
                 binop = "And"
@@ -214,9 +222,9 @@ export function filter(sourceFile: ts.SourceFile): block {
 
     function filterIfStatement(node: ts.IfStatement): stmt {
         const b = filterExpr(node.expression)
-        const e1 = filterBlockOrExpr(node.thenStatement)
+        const e1 = filterBlockOrExprOrStatement(node.thenStatement)
         if (node.elseStatement) {
-            const e2 = filterBlockOrExpr(node.elseStatement)
+            const e2 = filterBlockOrExprOrStatement(node.elseStatement)
             return mkIf2(b, e1, e2)
         } else {
             return mkIf1(b, e1)
@@ -225,7 +233,7 @@ export function filter(sourceFile: ts.SourceFile): block {
 
     function filterWhileStatement(node: ts.WhileStatement): stmt {
         const b = filterExpr(node.expression)
-        const e = filterBlockOrExpr(node.statement)
+        const e = filterBlockOrExprOrStatement(node.statement)
         return mkWhile(b, e)
     }
 

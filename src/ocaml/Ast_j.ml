@@ -42,6 +42,8 @@ let write_binop = (
       | `Minus -> Bi_outbuf.add_string ob "<\"Minus\">"
       | `Div -> Bi_outbuf.add_string ob "<\"Div\">"
       | `Less -> Bi_outbuf.add_string ob "<\"Less\">"
+      | `LessEq -> Bi_outbuf.add_string ob "<\"LessEq\">"
+      | `GreaterEq -> Bi_outbuf.add_string ob "<\"GreaterEq\">"
       | `Greater -> Bi_outbuf.add_string ob "<\"Greater\">"
       | `And -> Bi_outbuf.add_string ob "<\"And\">"
       | `Or -> Bi_outbuf.add_string ob "<\"Or\">"
@@ -96,6 +98,14 @@ let read_binop = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
               `Less
+            | "LessEq" ->
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_gt p lb;
+              `LessEq
+            | "GreaterEq" ->
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_gt p lb;
+              `GreaterEq
             | "Greater" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
@@ -133,6 +143,10 @@ let read_binop = (
               `Div
             | "Less" ->
               `Less
+            | "LessEq" ->
+              `LessEq
+            | "GreaterEq" ->
+              `GreaterEq
             | "Greater" ->
               `Greater
             | "And" ->
