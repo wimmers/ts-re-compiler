@@ -1,7 +1,7 @@
 /* Replace `{...o, x, y: 3}` with `_upd(_upd(o, x, x), y, 3)`. */
 
 module.exports = function({types: t}) {
-    const updFn = t.identifier("_upd")
+    const updFn = t.identifier("_updS")
     return {
         visitor: {
             ObjectExpression(path){
@@ -14,7 +14,9 @@ module.exports = function({types: t}) {
               if (!props.every(t.isProperty)) return
               const obj = first.argument
               const result = props.reduce(
-                (obj, param) => t.callExpression(updFn, [obj, param.key, param.value]),
+                (obj, param) =>
+                  t.callExpression(updFn,
+                    [obj, t.stringLiteral(param.key.name), param.value]),
                 obj
               )
               path.replaceWith(result)

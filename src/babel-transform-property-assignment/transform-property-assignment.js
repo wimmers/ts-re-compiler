@@ -15,12 +15,14 @@ module.exports = function({types: t}) {
         const object = left.object
         const property = left.property
         const fn = left.computed ? updFn : updFnS
-        const newRight = t.callExpression(fn, [object, property, right])
+        const prop = left.computed ? property : t.stringLiteral(property.name)
+        const newRight = t.callExpression(fn, [object, prop, right])
         const id = path.scope.generateUidIdentifier("tmp")
         const declarator = t.variableDeclarator(id, newRight)
         const declaration = t.variableDeclaration("const", [declarator])
         const assignment = t.assignmentExpression("=", object, id)
-        path.replaceWithMultiple([declaration, t.expressionStatement(assignment)])
+        path.replaceWithMultiple(
+          [declaration, t.expressionStatement(assignment)])
       }
     }
     return {
