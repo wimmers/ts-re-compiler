@@ -277,7 +277,7 @@ class lifter(bounds: string list) = object(self)
     | `Arrow (params, b) as e0 -> (
       match self#func1 name params b (`Expression e0) with
       | (r, Result(params1, b1)) -> (Some r, `Arrow(params1, b1))
-      | (r, Found e1) -> (Some r, e1)
+      | (r, Found e1) -> (Some r, `Protected e1)
       )
     | e -> super#expr name acc e
 
@@ -291,7 +291,8 @@ class lifter(bounds: string list) = object(self)
       | (r, Result(params1, b1)) -> (Some r, `FunctionDecl(s, params1, b1))
       | ((name2, params1, b1), Found e1) ->
         let decl = `VarDecl (s, e1) in
-        let b2 = insert_block decl b1 |> propagate_fun_bindings |> BasicTransformers.unprotect in
+        let b2 = (* XXX Why do we need the last two operations? recursion? Protection shouldn't have been applied? *)
+          insert_block decl b1 |> propagate_fun_bindings |> BasicTransformers.unprotect in
         (Some (name2, params1, b2), `VarDecl (s, e1))
       )
     | s -> super#stmt name acc s
@@ -299,7 +300,7 @@ end
 
 let lift ?tab:(tab=[]) b =
   let rec iter tab b n =
-    if n > 10 then
+    if n > 100 then
       raise (Invalid_argument "Seems like we have a termination problem!")
     else
     let bounds = List.map tab ~f:(fun (s, _, _) -> s) in
@@ -308,12 +309,13 @@ let lift ?tab:(tab=[]) b =
     match r_opt with
     | None -> (tab, b1)
     | Some r ->
-      let b2 = propagate_fun_bindings b1 in
-      let () = Stdio.printf "\nIteration %d before propagation:\n" n
-      and () = Stdio.print_endline (Pprint.print_block b1 ())
-      and () = Stdio.printf "\nIteration %d:\n" n
-      and () = Stdio.print_endline (Pprint.print_block b2 ()) in
+      let b2 = propagate_fun_bindings b1 in Stdio.(
+      let () = printf "\nIteration %d before propagation:\n" n
+      and () = print_endline (Pprint.print_block b1 ())
+      and () = printf "\nIteration %d:\n" n
+      and () = print_endline (Pprint.print_block b2 ()) in
       iter (r :: tab) b2 (n + 1)
+      )
     )
   in
   let (tab, b1) = iter tab b 0 in
