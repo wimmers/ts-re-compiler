@@ -5,6 +5,7 @@ open BasicTypes
 open Base
 
 let free_vars = LambdaLifting.free_vars
+let internal_fun_names = LambdaLifting.internal_fun_names
 
 (* XXX Move, see also insert_block *)
 let push_block e = function
@@ -57,7 +58,7 @@ class lifter = object(self)
     let acc0, cond1 = self#expr name acc cond in
     let acc1, body1 = self#block name acc0 body in
     let stmt = `While (cond1, body1) in
-    let bounds = List.map acc1 ~f:(fun (s, _, _) -> s) in
+    let bounds = List.map acc1 ~f:(fun (s, _, _) -> s) @ internal_fun_names in
     let f_name = Util.invent_name1 bounds (name ^ "$loop") in
     let func_decl, replacements = while_to_function bounds f_name stmt in
     let acc2 = func_decl :: acc1 in
