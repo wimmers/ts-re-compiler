@@ -341,13 +341,17 @@ export function filter(sourceFile: ts.SourceFile): block {
         const identifier = declaration.name
         const initializer = declaration.initializer
         if (initializer === undefined) {
+            if (declarationList.flags & ts.NodeFlags.Let) {
+                const name = ((identifier as ts.Identifier).escapedText as string)
+                return mkVarDecl(name)
+            }
             console.error("Variable Declaration needs assignment!")
             return mkExpression(mkUndefined)
         }
         const initializerResult = filterExpr(initializer)
         switch (identifier.kind) {
             case ts.SyntaxKind.Identifier:
-                const name: string = ((identifier as ts.Identifier).escapedText as string)
+                const name = ((identifier as ts.Identifier).escapedText as string)
                 return mkVarAssignment(name, initializerResult)
             case ts.SyntaxKind.ObjectBindingPattern:
                 const objPattern = identifier as ts.ObjectBindingPattern
