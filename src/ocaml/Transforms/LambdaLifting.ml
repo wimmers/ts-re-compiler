@@ -5,6 +5,7 @@ open BasicTypes
 open Base
 
 let add_bounds = fun bounds -> function
+  | `VarDecl s -> s :: bounds
   | `VarAssignment (s, _) -> s :: bounds
   | `FunctionDecl (s, _, _) -> s :: bounds
   | `VarObjectPatternDecl (xs, _) -> xs @ bounds
