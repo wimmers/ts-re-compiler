@@ -5,7 +5,7 @@ open BasicTypes
 open Base
 
 let add_bounds = fun bounds -> function
-  | `VarDecl (s, _) -> s :: bounds
+  | `VarAssignment (s, _) -> s :: bounds
   | `FunctionDecl (s, _, _) -> s :: bounds
   | `VarObjectPatternDecl (xs, _) -> xs @ bounds
   | `VarArrayPatternDecl (xs, _) -> xs @ bounds
@@ -73,7 +73,7 @@ class const_arrow_folder = object
   inherit [unit, unit] ast_transformer as super
 
   method! stmt () () = function
-  | `VarDecl(f, `Arrow(params, body)) ->  ((), `FunctionDecl(f, params, body))
+  | `VarAssignment(f, `Arrow(params, body)) ->  ((), `FunctionDecl(f, params, body))
   | e -> super#stmt () () e
 
 end
@@ -190,9 +190,9 @@ class constant_propagater = object(self)
       {b Warning} Incomplete: other stmts also generate bindings
   *)
   val update_func_tab = fun tab -> function
-  | `VarDecl(s, `Arrow(params0, `Block [`Expression `App(`Var(f), args)])) ->
+  | `VarAssignment(s, `Arrow(params0, `Block [`Expression `App(`Var(f), args)])) ->
     (Map.set tab ~key:s ~data:(params0, f, args), true)
-  | `VarDecl(s, _)  -> (Map.remove tab s, false)
+  | `VarAssignment(s, _)  -> (Map.remove tab s, false)
   | `FunctionDecl(s, _, _) -> (Map.remove tab s, false)
   | _ -> (tab, false)
 
@@ -284,26 +284,38 @@ class lifter(bounds: string list) = object(self)
   method! stmt name = function
   | Some(result) -> fun s -> (Some (result), s)
   | None as acc -> function
-    | `VarDecl (s, _) as s0 -> super#stmt (name ^ "_" ^ s) acc s0
+    | `VarAssignment (s, _) as s0 -> super#stmt (name ^ "_" ^ s) acc s0
     | `FunctionDecl(s, params, b) as s0 ->
       let name1 = name ^ "_" ^ s in (
       match self#func1 name1 params b s0 with
       | (r, Result(params1, b1)) -> (Some r, `FunctionDecl(s, params1, b1))
       | ((name2, params1, b1), Found e1) ->
-        let decl = `VarDecl (s, e1) in
+        let decl = `VarAssignment (s, e1) in
         let b2 = (* XXX Why do we need the last two operations? recursion? Protection shouldn't have been applied? *)
           insert_block decl b1 |> propagate_fun_bindings |> BasicTransformers.unprotect in
-        (Some (name2, params1, b2), `VarDecl (s, e1))
+        (Some (name2, params1, b2), `VarAssignment (s, e1))
       )
     | s -> super#stmt name acc s
 end
+
+let internal_fun_names = [
+  "_upd";
+  "_updS";
+  "_typeof";
+  "_neg";
+  "undefined"; (* XXX Hack: why is `Undefined identified as a variable? *)
+  "_slicedToArray"; (* XXX Why is this an internal function? *)
+  "Math"; (* XXX We should translate these objects away or define them internally *)
+  "Object";
+  "console"
+]
 
 let lift ?tab:(tab=[]) b =
   let rec iter tab b n =
     if n > 100 then
       raise (Invalid_argument "Seems like we have a termination problem!")
     else
-    let bounds = List.map tab ~f:(fun (s, _, _) -> s) in
+    let bounds = List.map tab ~f:(fun (s, _, _) -> s) @ internal_fun_names in
     let the_lifter = new lifter bounds in
     let (r_opt, b1) = the_lifter#block "#top" None b in (
     match r_opt with
