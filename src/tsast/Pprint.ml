@@ -43,7 +43,7 @@ and close_box = pp_close_box ppf
 and print_break = pp_print_break ppf
 in
 function
-| `VarDecl(name, expr) ->
+| `VarAssignment(name, expr) ->
     kwd "const";
     print_space ();
     ident name;
@@ -51,6 +51,11 @@ function
     kwd "=";
     print_space ();
     pprint_expr ppf expr;
+    kwd ";"
+| `VarDecl(name) ->
+    kwd "let";
+    print_space ();
+    ident name;
     kwd ";"
 | `VarObjectPatternDecl(names, expr) ->
     kwd "const";

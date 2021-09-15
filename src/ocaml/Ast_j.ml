@@ -499,8 +499,8 @@ and write_stmt = (
             Bi_outbuf.add_char ob ')';
         ) ob x;
         Bi_outbuf.add_char ob '>'
-      | `VarDecl x ->
-        Bi_outbuf.add_string ob "<\"VarDecl\":";
+      | `VarAssignment x ->
+        Bi_outbuf.add_string ob "<\"VarAssignment\":";
         (
           fun ob x ->
             Bi_outbuf.add_char ob '(';
@@ -516,6 +516,12 @@ and write_stmt = (
             ) ob x
             );
             Bi_outbuf.add_char ob ')';
+        ) ob x;
+        Bi_outbuf.add_char ob '>'
+      | `VarDecl x ->
+        Bi_outbuf.add_string ob "<\"VarDecl\":";
+        (
+          Yojson.Safe.write_string
         ) ob x;
         Bi_outbuf.add_char ob '>'
       | `FunctionDecl x ->
@@ -2244,7 +2250,7 @@ and read_stmt = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
               `Expression x
-            | "VarDecl" ->
+            | "VarAssignment" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
                   fun p lb ->
@@ -2289,6 +2295,15 @@ and read_stmt = (
                       (x0, x1)
                     with Yojson.End_of_tuple ->
                       Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0; 1 ]);
+                ) p lb
+              in
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_gt p lb;
+              `VarAssignment x
+            | "VarDecl" ->
+              Atdgen_runtime.Oj_run.read_until_field_value p lb;
+              let x = (
+                  Atdgen_runtime.Oj_run.read_string
                 ) p lb
               in
               Yojson.Safe.read_space p lb;
@@ -2662,7 +2677,7 @@ and read_stmt = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
               `Expression x
-            | "VarDecl" ->
+            | "VarAssignment" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
               Yojson.Safe.read_space p lb;
@@ -2709,6 +2724,17 @@ and read_stmt = (
                       (x0, x1)
                     with Yojson.End_of_tuple ->
                       Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0; 1 ]);
+                ) p lb
+              in
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_rbr p lb;
+              `VarAssignment x
+            | "VarDecl" ->
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_comma p lb;
+              Yojson.Safe.read_space p lb;
+              let x = (
+                  Atdgen_runtime.Oj_run.read_string
                 ) p lb
               in
               Yojson.Safe.read_space p lb;

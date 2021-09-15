@@ -58,13 +58,13 @@ let return_cutoff = new return_cutoff_class
 
 
 let disambiguate_function_name (bounds, name_tab as arg) = function
-| `VarDecl (s, e) as e0 -> (
+| `VarAssignment (s, e) as e0 -> (
   match Util.invent_name bounds s with
   | None -> (s::bounds, name_tab), e0
   | Some s1 ->
     let name_tab1 = Map.set name_tab ~key:s ~data:s1
     and bounds1 = s1 :: bounds
-    in (bounds1, name_tab1), `VarDecl (s1, e)
+    in (bounds1, name_tab1), `VarAssignment (s1, e)
 )
 | `FunctionDecl (_s, _, _) -> raise (Invalid_argument "Unexpected function declaration!")
 | `VarObjectPatternDecl (_xs, _) ->

@@ -1,7 +1,8 @@
 import * as ts from "typescript";
 import { stmt, expr, parameter, block, binop } from './tsast/Ast_t.gen';
 import {
-    mkApp, mkNull, mkNumber, mkString, mkUndefined, mkVar, mkVarDecl, mkParameter1, mkParameter2,
+    mkApp, mkNull, mkNumber, mkString, mkUndefined, mkVar, mkVarDecl, mkVarAssignment,
+    mkParameter1, mkParameter2,
     mkFunctionDecl, mkBlock,
     mkReturn1, mkReturn2, mkObjLit, mkArrayLit, mkSpread, mkIf1, mkIf2, mkWhile, mkBinop, mkArrow,
     mkObjectBindingPattern, mkArrayBindingPattern, mkNoOp, mkExpression, mkConditional, mkElementAccess, mkPropertyAccess
@@ -276,7 +277,7 @@ export function filter(sourceFile: ts.SourceFile): block {
         let left = expression.left
         let name = left.getText()
         let right = expression.right
-        return mkVarDecl(name, filterExpr(right))
+        return mkVarAssignment(name, filterExpr(right))
     }
 
     function filterFunctionDeclaration(node: ts.FunctionDeclaration): stmt {
@@ -347,7 +348,7 @@ export function filter(sourceFile: ts.SourceFile): block {
         switch (identifier.kind) {
             case ts.SyntaxKind.Identifier:
                 const name: string = ((identifier as ts.Identifier).escapedText as string)
-                return mkVarDecl(name, initializerResult)
+                return mkVarAssignment(name, initializerResult)
             case ts.SyntaxKind.ObjectBindingPattern:
                 const objPattern = identifier as ts.ObjectBindingPattern
                 const objBinders = getPatternBinders(objPattern.elements)

@@ -11,7 +11,7 @@ let push_block e = function
 | `Block b -> `Block (b @ [e])
 
 let bind_vars_from_obj frees e =
-  List.map frees ~f:(fun s -> `VarDecl (s, `PropertyAccess (e, s)))
+  List.map frees ~f:(fun s -> `VarAssignment (s, `PropertyAccess (e, s)))
 
 let while_to_function bounds name = function `While (cond, body) as stmt ->
   (* Assume distinct and unique *)
@@ -25,7 +25,7 @@ let while_to_function bounds name = function `While (cond, body) as stmt ->
   let func_decl = name, params, `Block [body1] in
   (* XXX This could yield a name clash. Invent a proper fresh variable for current scope. *)
   let result_name = name ^ "_result" in
-  let assignment = `VarDecl (result_name, recursion) in
+  let assignment = `VarAssignment (result_name, recursion) in
   let assignments = bind_vars_from_obj frees (`Var result_name) in
   let replacement = assignment :: assignments in
   func_decl, replacement
@@ -62,7 +62,7 @@ class lifter = object(self)
     let func_decl, replacements = while_to_function bounds f_name stmt in
     let acc2 = func_decl :: acc1 in
     acc2, replacements
-  | `FunctionDecl(s, _, _) | `VarDecl (s, _) as s0 ->
+  | `FunctionDecl(s, _, _) | `VarAssignment (s, _) as s0 ->
     super#stmt_multi (name ^ "_" ^ s) acc s0
   | s -> super#stmt_multi name acc s
 

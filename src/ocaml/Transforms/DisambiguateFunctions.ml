@@ -19,8 +19,8 @@ let extend_body optionals = function
 | `Block stmts ->
   let new_stmts = List.fold_right optionals ~init:stmts ~f:(
   fun param stmts -> match param with
-  | `Parameter (s, false, Some e) -> `VarDecl (s, e) :: stmts
-  | `Parameter (s, true, None) -> `VarDecl (s, `Undefined) :: stmts
+  | `Parameter (s, false, Some e) -> `VarAssignment (s, e) :: stmts
+  | `Parameter (s, true, None) -> `VarAssignment (s, `Undefined) :: stmts
   | p -> raise (Invalid_argument
       (Caml.Format.asprintf "Not a valid optional %a" Pprint.pprint_parameter p))
   ) in

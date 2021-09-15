@@ -331,8 +331,8 @@ and write_stmt js = (
           write_expr
         )
     ) x
-    | `VarDecl x ->
-    Atdgen_codec_runtime.Encode.constr1 "VarDecl" (
+    | `VarAssignment x ->
+    Atdgen_codec_runtime.Encode.constr1 "VarAssignment" (
       Atdgen_codec_runtime.Encode.tuple2
         (
           Atdgen_codec_runtime.Encode.string
@@ -340,6 +340,10 @@ and write_stmt js = (
         (
           write_expr
         )
+    ) x
+    | `VarDecl x ->
+    Atdgen_codec_runtime.Encode.constr1 "VarDecl" (
+      Atdgen_codec_runtime.Encode.string
     ) x
     | `FunctionDecl x ->
     Atdgen_codec_runtime.Encode.constr1 "FunctionDecl" (
@@ -680,7 +684,7 @@ and read_stmt js = (
       )
     ;
       (
-      "VarDecl"
+      "VarAssignment"
       ,
         `Decode (
         Atdgen_codec_runtime.Decode.tuple2
@@ -690,6 +694,15 @@ and read_stmt js = (
           (
             read_expr
           )
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`VarAssignment x) : _))
+        )
+      )
+    ;
+      (
+      "VarDecl"
+      ,
+        `Decode (
+        Atdgen_codec_runtime.Decode.string
         |> Atdgen_codec_runtime.Decode.map (fun x -> ((`VarDecl x) : _))
         )
       )

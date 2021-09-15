@@ -30,7 +30,8 @@ and [@gentype.opaque] parameter = [ `Parameter of (string * bool * expr option) 
 
 and [@gentype.opaque] stmt = [
     `Expression of (expr)
-  | `VarDecl of (string * expr)
+  | `VarAssignment of (string * expr)
+  | `VarDecl of string
   | `FunctionDecl of (string * parameter list * block)
   | `Return of (expr option)
   | `If of (expr * block * block option)

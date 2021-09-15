@@ -24,7 +24,22 @@ let strip_top_level_undefineds: Ast_t.block -> Ast_t.block = function
   let xs1 = List.filter xs ~f:(function `Expression `Undefined -> false | _ -> true) in
   `Block xs1
 
-let conv_op = function
+type binop_t = [
+| `And
+| `Div
+| `Eq
+| `Eq2
+| `Eq3
+| `Greater
+| `Less
+| `Minus
+| `Neq2
+| `Neq3
+| `Or
+| `Plus
+| `Times ]
+
+let conv_op: binop_t -> _ = function
   | `Eq -> Eq
   | `Eq2 -> Eq2
   | `Neq2 -> Neq2
@@ -111,7 +126,12 @@ let rec letify_expr = function
   let [@warning "-8"] [eb; e1; e2] = List.map [eb;e1;e2] ~f:letify_expr in
   If (eb, e1, e2)
 | `Binop (op, e1, e2) ->
-  Binop (conv_op op, letify_expr e1, letify_expr e2)
+  let e1, e2 = letify_expr e1, letify_expr e2 in (
+    match op with (* XXX This is lazy, handle in backend *)
+  | `GreaterEq -> Binop (Or, Binop (Greater, e1, e2), Binop (Eq3, e1, e2))
+  | `LessEq -> Binop (Or, Binop (Less, e1, e2), Binop (Eq3, e1, e2))
+  | #binop_t as op -> Binop (conv_op op, e1, e2)
+  )
 (* XXX This translation works for closures of the form `(params) => f(args...params)`.
    For closures that violate this format, additional variants of f would need to be introduced
    that take care of the reordering. Q: is this invariant already established by earlier stages?
@@ -148,7 +168,7 @@ and letify_stmt = function
 | stmt -> raise
     (Invalid_argument (asprintf "Unsupported statement: %a" pprint_stmt stmt))
 and letify_var_decl = function
-| `VarDecl (s, e) -> (s, letify_expr e)
+| `VarAssignment (s, e) -> (s, letify_expr e)
 | stmt -> raise
     (Invalid_argument (asprintf "Not a variable declaration: %a" pprint_stmt stmt))
 and letify_block = function

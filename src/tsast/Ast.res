@@ -1,4 +1,5 @@
-export mkVarDecl: (_, _) => Ast_t.stmt = (s, e) => #VarDecl(s, e)
+export mkVarDecl: _ => Ast_t.stmt = s => #VarDecl(s)
+export mkVarAssignment: (_, _) => Ast_t.stmt = (s, e) => #VarAssignment(s, e)
 export mkFunctionDecl: (_, _, _) => Ast_t.stmt = (s, ps, e) =>
   #FunctionDecl(s, Array.to_list(ps), e)
 export mkReturn1: Ast_t.stmt = #Return(None)

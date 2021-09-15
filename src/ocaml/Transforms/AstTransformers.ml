@@ -5,9 +5,9 @@ open Base;;
 class ['b,'a] ast_transformer = object(self)
 
   method stmt (down: 'b) (acc: 'a) = function
-  | `VarDecl(s, e) ->
+  | `VarAssignment(s, e) ->
     let (acc1, e1) = self#expr down acc e in
-    (acc1, `VarDecl(s, e1))
+    (acc1, `VarAssignment(s, e1))
   | `FunctionDecl(s, params, b) ->
     let (acc1, params1, b1) = self#func down acc params b in
     (acc1, `FunctionDecl (s, params1, b1))
@@ -93,7 +93,7 @@ class ['a] ast_folder = object(self)
     List.fold ~f:self#parameter ~init:(self#block acc b) params
 
   method stmt (acc: 'a) = function
-  | `VarDecl(_s, e) -> self#expr acc e
+  | `VarAssignment(_s, e) -> self#expr acc e
   | `FunctionDecl(_s, params, b) -> self#func acc params b
   | `If(b, e1, e2_opt) -> (
     self#expr acc b
