@@ -74,8 +74,8 @@ class const_arrow_folder = object
   inherit [unit, unit] ast_transformer as super
 
   method! stmt () () = function
-  | `VarAssignment(f, `Arrow(params, body)) ->  ((), `FunctionDecl(f, params, body))
-  | e -> super#stmt () () e
+  | `VarAssignment(f, `Arrow(params, body)) ->  super#stmt () () (`FunctionDecl(f, params, body))
+  | stmt -> super#stmt () () stmt
 
 end
 
