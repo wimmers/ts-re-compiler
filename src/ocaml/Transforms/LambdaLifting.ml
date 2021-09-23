@@ -306,10 +306,14 @@ let internal_fun_names = [
   "_typeof";
   "_neg";
   "undefined"; (* XXX Hack: why is `Undefined identified as a variable? *)
-  "_slicedToArray"; (* XXX Why is this an internal function? *)
-  "Math"; (* XXX We should translate these objects away or define them internally *)
-  "Object";
-  "console"
+  "_const2_1";
+  "_const2_2";
+  "_undefined0";
+  "_undefined1";
+  "_id";
+  "_slice";
+  "_map";
+  "_choose"
 ]
 
 let lift ?tab:(tab=[]) b =
