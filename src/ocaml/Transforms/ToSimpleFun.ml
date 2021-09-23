@@ -4,7 +4,6 @@ open Pprint
 open BasicTypes
 open Base
 
-let  x = Float.Parts.fractional
 let is_int_float v =
   let c = Float.classify (Float.Parts.fractional (Float.modf v)) in
   Poly.(c = Zero)
@@ -16,6 +15,10 @@ struct
 
   let all_internals = [array_cons; array_append]
 end
+
+let assert_name = "_assert"
+
+let pre_prefix = "P$"
 
 let asprintf = Caml.Format.asprintf
 
@@ -76,7 +79,7 @@ let compile_internals =
   block1
 
 let ensure_prop_stmt = function
-| `Expression (`App (`PropertyAccess (`Var "console", "assert"), [prop]))
+| `Expression (`App (`Var s, [prop])) when String.equal s assert_name
   -> `Expression prop
 | s -> raise (Invalid_argument (asprintf "Not a prop: %a" pprint_stmt s)) 
 
@@ -89,6 +92,57 @@ let ensure_prop: Ast_t.block -> Ast_t.block = function
     `Block (Util.butlast xs @ [ensure_prop_stmt stmt])
 
 
+let true_const = Const (Bool true)
+let get_bool b = Option.value ~default:true_const b
+let mk_and b1 b2 = Binop (And, b1, b2)
+let mk_and0 b1 b2 = `Binop (`And, b1, b2)
+
+let fun_name_to_pre name = pre_prefix ^ name
+
+(* XXX wrong *)
+let mk_call_pre_expr e es = (*`App (`PropertyAccess (e, "pre"), es) *)
+  let fun_name = `PropertyAccess (e, "fun") in
+  let pre_name = `Binop (`Plus, `String pre_prefix, fun_name) in
+  let obj = `App (`Var "_updS", [e; `String "fun"; pre_name]) in
+  `App (obj, es)
+
+(* XXX Move? *)
+let extract_object_param = function
+| `Parameter (s, false, Some e) -> s, e
+| `Parameter (s, false, None) -> s, `Var s
+| p ->
+  raise (Invalid_argument (
+    asprintf "Invalid parameter in object literal: %a"
+      pprint_parameter p))
+
+(* XXX What would be a nice monadic version of this? *)
+let rec expr_cond funs = function
+| `App (`Var name, [cond]) when String.equal name assert_name -> Some cond
+| `App (e, es) ->
+  let cond = (match e with
+    | `Var name when List.mem funs name ~equal:String.equal ->
+      let pre_name = fun_name_to_pre name in
+      `App (`Var pre_name, es)
+    | _ -> mk_call_pre_expr e es
+  ) in
+  let conds = List.filter_map ~f:(expr_cond funs) es in
+  let conj = List.fold conds ~init:cond ~f:mk_and0 in
+  Some conj
+| `ObjLit(params) ->
+  let conds = List.filter_map params ~f:(fun p ->
+    extract_object_param p |> snd |> expr_cond funs) in
+  List.reduce conds ~f:mk_and0
+| `ArrayLit(es) ->
+  let conds = List.filter_map es ~f:(expr_cond funs) in
+  List.reduce conds ~f:mk_and0
+| `Binop(_, e1, e2) | `ElementAccess(e1, e2) ->
+  Option.merge (expr_cond funs e1) (expr_cond funs e2) ~f:mk_and0
+| `PropertyAccess(e, _s) ->
+  expr_cond funs e
+| `Arrow _ | `Var _ | `String _ | `Number _ | `Null | `Undefined -> None
+| e -> raise
+    (Invalid_argument (asprintf "Unsupported expression: %a" pprint_expr e))
+
 let letify (funs: string list) =
 
 let rec letify_expr = function
@@ -100,15 +154,8 @@ let rec letify_expr = function
 | `ArrayLit (es) -> List.fold_right es ~init:(Const (Array []))
     ~f:(fun e tail -> App (Builtins.array_cons, [letify_expr e; tail]))
 | `ObjLit (params) -> List.fold params ~init:(Const (Obj []))
-    ~f:(fun obj -> function
-        | `Parameter (s, false, Some e) ->
-          UpdateS (obj, Const (String s), letify_expr e)
-        | `Parameter (s, false, None) ->
-          UpdateS (obj, Const (String s), Var s)
-        | p ->
-          raise (Invalid_argument (
-            asprintf "Cannot tranlsate parameter in object literal: %a"
-              pprint_parameter p))
+    ~f:(fun obj param -> let (s, e) = extract_object_param param in
+      UpdateS (obj, Const (String s), letify_expr e)
     )
 | `PropertyAccess (e, s) ->
   AccessS(letify_expr e, Const (String s))
@@ -152,7 +199,7 @@ let rec letify_expr = function
     let do_params_match = Poly.(vs = params1) in
     if do_params_match then
       UpdateS (
-        Const (Obj ["fun", String s]),
+        Const (Obj ["fun", String s; "pre", String (fun_name_to_pre s)]),
         Const (String "args"),
         letify_expr (`ArrayLit first_args)
       )
@@ -161,7 +208,8 @@ let rec letify_expr = function
         (asprintf "Closure; last arguments need to match parameters: %a" pprint_expr e))
 | e -> raise
     (Invalid_argument (asprintf "Unsupported expression: %a" pprint_expr e))
-and letify_stmt = function
+in
+let rec letify_stmt = function
 | `Expression e -> letify_expr e
 | `If (cond, b1, (Some b2)) ->
   If (letify_expr cond, letify_block b1, letify_block b2)
@@ -180,14 +228,46 @@ and letify_block = function
   let decls = List.map stmts1 ~f:letify_var_decl
   and e = letify_stmt stmt in
   Lets (decls, e)
-in letify_block
+in
+let rec preify_stmt = function
+| `Expression e -> expr_cond funs e |> Option.map ~f:letify_expr
+| `If (cond, b1, Some b2) ->
+  let b11 = preify_block b1 in
+  let b21 = preify_block b2 in
+  let if_cond_opt = (
+    if Option.is_none b11 && Option.is_none b21 then
+      None
+    else Some (If (letify_expr cond, get_bool b11, get_bool b21))
+  ) in
+  let expr_cond_opt = expr_cond funs cond |> Option.map ~f:letify_expr in
+  Option.merge if_cond_opt expr_cond_opt ~f:mk_and
+| stmt -> raise
+    (Invalid_argument (asprintf "Unsupported statement: %a" pprint_stmt stmt))
+and preify_var_decl = function
+| `VarAssignment (s, e) ->
+  let decl = s, letify_expr e
+  and e_cond_opt = expr_cond funs e |> Option.map ~f:letify_expr
+  in e_cond_opt, decl
+| stmt -> raise
+    (Invalid_argument (asprintf "Not a variable declaration: %a" pprint_stmt stmt))
+and preify_block = function
+| `Block [] -> raise (Invalid_argument "Cannot translate empty block!")
+| `Block [stmt] -> preify_stmt stmt
+| `Block stmts ->
+  let stmts1 = Util.butlast stmts
+  and stmt = List.last_exn stmts in
+  let acc1, decls = List.map stmts1 ~f:preify_var_decl |> List.unzip in
+  let e = preify_stmt stmt in
+  let conds = List.filter_opt (e :: acc1) in
+  let cond = List.reduce conds ~f:mk_and in
+  Option.map cond ~f:(fun e -> Lets (decls, e))
+in letify_block, fun b -> preify_block b |> get_bool
 
-let letify_fun fun_names (name, params, body) =
-  let body =
-    body
-    |> compile_internals
-    |> letify fun_names
-  in
+let letify_preify_fun fun_names (name, params, body) =
+  let letify, preify = letify fun_names in
+  let body0 = body |> compile_internals in
+  let body = body0 |> letify in
+  let body_pre = body0 |> preify in
   let param_names = List.map params ~f:(function
   | `Parameter (s, false, None) -> s
   | p -> raise (Invalid_argument (
@@ -195,7 +275,9 @@ let letify_fun fun_names (name, params, body) =
               pprint_parameter p))
   ) in
   let typs = List.init (List.length params) ~f:(fun _ -> Val) in
-  name, (typs, Val), Fun (param_names, body)
+  let func = name, (typs, Val), Fun (param_names, body)
+  and pre = fun_name_to_pre name, (typs, Val), Fun (param_names, body_pre) in
+  [func; pre]
 
 let letify_program ((tab, b): program) =
   let fun_names = List.map tab ~f:(fun (s, _, _) -> s) in
@@ -206,6 +288,6 @@ let letify_program ((tab, b): program) =
     |> compile_internals
     |> ensure_prop
   in
-  let e = letify fun_names b in
-  let funs = List.map tab ~f:(letify_fun fun_names) in
+  let e = fst (letify fun_names) b in
+  let funs = List.concat_map tab ~f:(letify_preify_fun fun_names) in
   funs, e
