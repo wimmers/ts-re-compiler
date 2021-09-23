@@ -32,6 +32,26 @@ let the_denoper = new denoper
 let denop b =
   let _, b1 = the_denoper#block () () b in b1
 
+(** [denop_program p] removes any [`NoOp] markers from program [p] *)
+let denop_program p =
+  let _, p1 = the_denoper#program () () p in p1
+
+
+class let_stripper = object
+  inherit [unit, unit] ast_transformer as super
+
+  method! stmt () () = function
+  | `VarDecl _ -> (), `NoOp
+  | stmt -> super#stmt () () stmt
+
+end
+
+let the_let_stripper = new let_stripper
+
+(** [strip_let p] removes any [`NoOp] markers from program [p] *)
+let strip_let p =
+  let _, p1 = the_let_stripper#program () () p in p1
+
 
 class function_stripper function_names = object
   inherit [unit, unit] ast_transformer as super

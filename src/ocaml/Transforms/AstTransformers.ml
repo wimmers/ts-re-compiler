@@ -82,6 +82,16 @@ class ['b,'a] ast_transformer = object(self)
     let (acc1, b1) = self#block down acc b in
     let (acc2, params) = List.fold_map ~f:(self#parameter down) ~init:acc1 params in
     (acc2, params, b1)
+  
+  method program (down: 'b) (acc: 'a) ((tab, block): BasicTypes.program): 'a * BasicTypes.program =
+    let program_folder = fun acc (name, params, body) ->
+      let acc1, params1, body1 = self#func down acc params body in
+      acc1, (name, params1, body1)
+    in
+    let acc1, tab1 = List.fold_map tab ~f:program_folder ~init:acc in
+    let acc2, block1 = self#block down acc1 block in
+    acc2, (tab1, block1)
+
 
 end
 
