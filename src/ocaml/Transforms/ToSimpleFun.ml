@@ -143,17 +143,30 @@ let rec expr_cond funs = function
 | e -> raise
     (Invalid_argument (asprintf "Unsupported expression: %a" pprint_expr e))
 
-let letify (funs: string list) =
+let translate_updS = function
+| [obj; k; v] -> UpdateS (obj, k, v)
+| args -> raise (Invalid_argument
+    (asprintf "Invalid number of args for _updS: %d" (List.length args)))
+
+let custom_translations = [
+  "_updS", translate_updS
+]
+
+let letify (funs: string list) = List.(
 
 let rec letify_expr = function
 | `Var s -> Var s
+| `App (`Var s, es) when Assoc.mem custom_translations s ~equal:String.equal ->
+  let translator = Assoc.find_exn custom_translations s ~equal:String.equal in
+  let args = map ~f:letify_expr es in
+  translator args
 (* XXX This heuristic is generally not correct *)
-| `App (`Var s, es) when List.mem funs s ~equal:String.equal ->
-  App (s, List.map es ~f:letify_expr)
-| `App(e, es) -> AppE (letify_expr e, List.map es ~f:letify_expr)
-| `ArrayLit (es) -> List.fold_right es ~init:(Const (Array []))
+| `App (`Var s, es) when mem funs s ~equal:String.equal ->
+  App (s, map es ~f:letify_expr)
+| `App(e, es) -> AppE (letify_expr e, map es ~f:letify_expr)
+| `ArrayLit (es) -> fold_right es ~init:(Const (Array []))
     ~f:(fun e tail -> App (Builtins.array_cons, [letify_expr e; tail]))
-| `ObjLit (params) -> List.fold params ~init:(Const (Obj []))
+| `ObjLit (params) -> fold params ~init:(Const (Obj []))
     ~f:(fun obj param -> let (s, e) = extract_object_param param in
       UpdateS (obj, Const (String s), letify_expr e)
     )
@@ -170,7 +183,7 @@ let rec letify_expr = function
 | `Undefined -> Const Undefined
 | `Null -> Const Null
 | `Conditional (eb, e1, e2) ->
-  let [@warning "-8"] [eb; e1; e2] = List.map [eb;e1;e2] ~f:letify_expr in
+  let [@warning "-8"] [eb; e1; e2] = map [eb;e1;e2] ~f:letify_expr in
   If (eb, e1, e2)
 | `Binop (op, e1, e2) ->
   let e1, e2 = letify_expr e1, letify_expr e2 in (
@@ -184,16 +197,16 @@ let rec letify_expr = function
    that take care of the reordering. Q: is this invariant already established by earlier stages?
 *)
 | `Arrow (params, `Block [`Expression (`App (`Var s, es))]) as e when
-    List.mem funs s ~equal:String.equal
+    mem funs s ~equal:String.equal
   ->
-    let n_params = List.length params in
-    let n_prefix = List.length es - n_params in
-    let last_args = List.drop es n_prefix in
-    let first_args = List.take es n_prefix in
-    let vs = List.map last_args ~f:(function `Var s -> s | _ ->
+    let n_params = length params in
+    let n_prefix = length es - n_params in
+    let last_args = drop es n_prefix in
+    let first_args = take es n_prefix in
+    let vs = map last_args ~f:(function `Var s -> s | _ ->
       raise (Invalid_argument
         (asprintf "Closure; last arguments need to be variables: %a" pprint_expr e))) in
-    let params1 = List.map params ~f:(function `Parameter (s, false, None) -> s | _ ->
+    let params1 = map params ~f:(function `Parameter (s, false, None) -> s | _ ->
       raise (Invalid_argument
         (asprintf "Closure; parameters need to be regular: %a" pprint_expr e))) in
     let do_params_match = Poly.(vs = params1) in
@@ -226,10 +239,10 @@ and letify_block = function
 | `Block [stmt] -> letify_stmt stmt
 | `Block stmts ->
   let stmts1 = Util.butlast stmts
-  and stmt = List.last_exn stmts in
-  let decls = List.filter_map stmts1 ~f:letify_var_decl
+  and stmt = last_exn stmts in
+  let decls = filter_map stmts1 ~f:letify_var_decl
   and e = letify_stmt stmt in
-  if List.is_empty decls then e else Lets (decls, e)
+  if is_empty decls then e else Lets (decls, e)
 in
 let rec preify_stmt = function
 | `Expression e -> expr_cond funs e |> Option.map ~f:letify_expr
@@ -258,15 +271,15 @@ and preify_block = function
 | `Block [] -> raise (Invalid_argument "Cannot translate empty block!")
 | `Block stmts ->
   let stmts1 = Util.butlast stmts
-  and stmt = List.last_exn stmts in
-  let conds, decls = List.map stmts1 ~f:preify_var_decl |> List.unzip in
-  let decls = List.filter_opt decls in
+  and stmt = last_exn stmts in
+  let conds, decls = map stmts1 ~f:preify_var_decl |> unzip in
+  let decls = filter_opt decls in
   let e = preify_stmt stmt in
-  let conds = List.filter_opt (e :: conds) in
-  let cond = List.reduce conds ~f:mk_and in
+  let conds = filter_opt (e :: conds) in
+  let cond = reduce conds ~f:mk_and in
   Option.map cond ~f:(fun e ->
-    if List.is_empty decls then e else  Lets (decls, e))
-in letify_block, fun b -> preify_block b |> get_bool
+    if is_empty decls then e else  Lets (decls, e))
+in letify_block, fun b -> preify_block b |> get_bool)
 
 let letify_preify_fun fun_names (name, params, body) =
   let pre_names = List.map fun_names ~f:fun_name_to_pre in
