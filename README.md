@@ -92,4 +92,5 @@ However, the `.merlin` file is probably needed to get all features for ReScript 
   - `babel-transform-property-assignment`
   - `babel-rename`
   - `babel-hoist-declarations`
+  - `babel-transform-internals`
 - The module `simple_fun` needs to be installed locally via opam.
