@@ -300,6 +300,7 @@ class lifter(bounds: string list) = object(self)
 end
 
 let internal_fun_names = [
+  "_assert";
   "_upd";
   "_updS";
   "_typeof";

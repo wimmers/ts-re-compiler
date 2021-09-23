@@ -216,7 +216,9 @@ let rec letify_stmt = function
 | stmt -> raise
     (Invalid_argument (asprintf "Unsupported statement: %a" pprint_stmt stmt))
 and letify_var_decl = function
-| `VarAssignment (s, e) -> (s, letify_expr e)
+| `VarAssignment (s, e) -> Some (s, letify_expr e)
+| `Expression (`App (`Var s, [_prop])) when String.equal s assert_name ->
+  None
 | stmt -> raise
     (Invalid_argument (asprintf "Not a variable declaration: %a" pprint_stmt stmt))
 and letify_block = function
@@ -225,9 +227,9 @@ and letify_block = function
 | `Block stmts ->
   let stmts1 = Util.butlast stmts
   and stmt = List.last_exn stmts in
-  let decls = List.map stmts1 ~f:letify_var_decl
+  let decls = List.filter_map stmts1 ~f:letify_var_decl
   and e = letify_stmt stmt in
-  Lets (decls, e)
+  if List.is_empty decls then e else Lets (decls, e)
 in
 let rec preify_stmt = function
 | `Expression e -> expr_cond funs e |> Option.map ~f:letify_expr
@@ -247,20 +249,23 @@ and preify_var_decl = function
 | `VarAssignment (s, e) ->
   let decl = s, letify_expr e
   and e_cond_opt = expr_cond funs e |> Option.map ~f:letify_expr
-  in e_cond_opt, decl
+  in e_cond_opt, Some decl
+| `Expression (`App (`Var s, [prop])) when String.equal s assert_name ->
+  Some (letify_expr prop), None
 | stmt -> raise
     (Invalid_argument (asprintf "Not a variable declaration: %a" pprint_stmt stmt))
 and preify_block = function
 | `Block [] -> raise (Invalid_argument "Cannot translate empty block!")
-| `Block [stmt] -> preify_stmt stmt
 | `Block stmts ->
   let stmts1 = Util.butlast stmts
   and stmt = List.last_exn stmts in
-  let acc1, decls = List.map stmts1 ~f:preify_var_decl |> List.unzip in
+  let conds, decls = List.map stmts1 ~f:preify_var_decl |> List.unzip in
+  let decls = List.filter_opt decls in
   let e = preify_stmt stmt in
-  let conds = List.filter_opt (e :: acc1) in
+  let conds = List.filter_opt (e :: conds) in
   let cond = List.reduce conds ~f:mk_and in
-  Option.map cond ~f:(fun e -> Lets (decls, e))
+  Option.map cond ~f:(fun e ->
+    if List.is_empty decls then e else  Lets (decls, e))
 in letify_block, fun b -> preify_block b |> get_bool
 
 let letify_preify_fun fun_names (name, params, body) =
@@ -288,6 +293,7 @@ let letify_program ((tab, b): program) =
     |> compile_internals
     |> ensure_prop
   in
-  let e = fst (letify fun_names) b in
+  let letify, preify = letify fun_names in
+  let e, pre = letify b, preify b in
   let funs = List.concat_map tab ~f:(letify_preify_fun fun_names) in
-  funs, e
+  funs, mk_and e pre
