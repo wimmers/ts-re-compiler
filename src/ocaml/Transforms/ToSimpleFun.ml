@@ -282,8 +282,7 @@ and preify_block = function
 in letify_block, fun b -> preify_block b |> get_bool)
 
 let letify_preify_fun fun_names (name, params, body) =
-  let pre_names = List.map fun_names ~f:fun_name_to_pre in
-  let fun_names = fun_names @ pre_names in
+  let fun_names = fun_names in
   let letify, preify = letify fun_names in
   let body0 = body |> compile_internals in
   let body = body0 |> letify in
@@ -301,7 +300,8 @@ let letify_preify_fun fun_names (name, params, body) =
 
 let letify_program ((tab, b): program) =
   let fun_names = List.map tab ~f:(fun (s, _, _) -> s) in
-  let fun_names = fun_names @ Builtins.all_internals in
+  let pre_names = List.map fun_names ~f:fun_name_to_pre in
+  let fun_names = pre_names @ fun_names @ Builtins.all_internals in
   let b =
     b
     |> strip_top_level_undefineds
