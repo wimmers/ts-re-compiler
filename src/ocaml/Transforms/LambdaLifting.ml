@@ -86,11 +86,6 @@ let fold_const_arrows =
     b1
 
 
-let get_parameter_var = function
-  `Parameter (s, _, _) -> s
-
-let get_parameter_vars = List.map ~f:get_parameter_var
-
 let is_function_decl = function
 | `FunctionDecl _ -> true
 | _ -> false
@@ -112,7 +107,7 @@ class free_vars_computer = object(self)
   | e -> super#expr bounds frees e
 
   method! func bounds frees params b =
-    let ps = get_parameter_vars params in
+    let ps = BasicTransformers.get_parameter_vars params in
     let (frees1, _) = List.fold_map ~f:(self#parameter frees) ~init:frees params in
     let (frees2, _) = self#block (ps @ bounds) frees1 b in
     (frees2, params, b)
@@ -242,7 +237,7 @@ class lifter(bounds: string list) = object(self)
   inherit [string, (string * parameter list * block) option] ast_transformer as super
 
   val make_partial = fun ((s:string), (params_0:parameter list), (params_ext: string list)) ->
-    let ps = get_parameter_vars params_0 in
+    let ps = BasicTransformers.get_parameter_vars params_0 in
     let args = List.map ~f:(fun v -> `Var (v)) (params_ext @ ps) in
     `Arrow(params_0, `Block [`Expression (`App(`Var(s), args))])
 

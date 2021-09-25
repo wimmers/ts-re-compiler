@@ -66,15 +66,15 @@ let disambiguate_function_name (bounds, name_tab as arg) = function
     and bounds1 = s1 :: bounds
     in (bounds1, name_tab1), `VarAssignment (s1, e)
 )
-| `FunctionDecl (_s, _, _) -> raise (Invalid_argument "Unexpected function declaration!")
+| `FunctionDecl (_s, _, _) ->
+  raise (Invalid_argument "Unexpected function declaration!")
 | `VarObjectPatternDecl (_xs, _) ->
   raise (Invalid_argument "Object pattern matching not implemented!")
 | `VarArrayPatternDecl (_xs, _) ->
   raise (Invalid_argument "Array pattern matching not implemented!")
 | stmt -> arg, stmt
 
-(** Transforms functions such that function parameters do not capture bound variables.
-*)
+(** Disambiguate variable names: Each variable should be bound at most once. **)
 class variable_disambiguater_class = object(self)
   inherit [string list * string string_tab, unit] AstTransformers.ast_transformer as super
 
@@ -98,6 +98,10 @@ class variable_disambiguater_class = object(self)
     let _, blocks1 = List.fold_map ~f:folder ~init:down blocks in
     (), `Block blocks1
 
+  method! func (bounds, name_tab) () params b  =
+    let new_bounds = BasicTransformers.get_parameter_vars params in
+    super#func (new_bounds @ bounds, name_tab) () params b
+
 end
 
 let variable_disambiguater = new variable_disambiguater_class
@@ -107,12 +111,13 @@ let apply_to_program ~down transformer ((funs: fun_decl list), block) =
   let funs1 = List.map funs ~f:(fun (s, params, block) ->
     let _, block1 = transformer#block down () block in
     (s, params, block1)
-    )
+  )
   in let _, block1 = transformer#block down () block in
   (funs1: fun_decl list), block1
 
 let pull_if p =
   p
-  |> apply_to_program variable_disambiguater ~down:([], Map.empty(module String))
+  |> variable_disambiguater#program ([], Map.empty(module String)) ()
+  |> snd
   |> apply_to_program if_pullover ~down:()
   |> apply_to_program return_cutoff ~down:()

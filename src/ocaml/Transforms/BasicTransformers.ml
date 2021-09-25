@@ -1,4 +1,5 @@
 open AstTransformers
+open Base
 
 class unprotecter = object
   inherit [unit, unit] ast_transformer as super
@@ -21,7 +22,7 @@ class denoper = object
 
   method! block () () = function
   | `Block bs ->
-    let bs1 = List.filter((<>) `NoOp) bs in
+    let bs1 = List.filter ~f:(Poly.(<>) `NoOp) bs in
     super#block () () (`Block bs1)
 
 end
@@ -58,8 +59,9 @@ class function_stripper function_names = object
 
   method! expr () () = function
   | `App(`Var(x), [arg]) as e0 ->
-    let e1 = if List.mem x function_names then arg else e0 in
-    super#expr () () e1
+    let e1 =
+      if List.mem ~equal:String.equal function_names x then arg else e0
+    in super#expr () () e1
   | e -> super#expr () () e
 
 end
@@ -69,3 +71,8 @@ let strip_functions function_names b =
   let the_function_stripper = new function_stripper function_names in
   let _, b1 = the_function_stripper#block () () b in
   b1
+
+let get_parameter_var = function
+  `Parameter (s, _, _) -> s
+
+let get_parameter_vars = List.map ~f:get_parameter_var
