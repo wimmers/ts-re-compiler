@@ -212,7 +212,7 @@ let rec letify_expr = function
     let do_params_match = Poly.(vs = params1) in
     if do_params_match then
       UpdateS (
-        Const (Obj ["fun", String s; "pre", String (fun_name_to_pre s)]),
+        Const (Obj ["fun", String s]),
         Const (String "args"),
         letify_expr (`ArrayLit first_args)
       )
