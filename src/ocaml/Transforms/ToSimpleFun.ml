@@ -102,7 +102,7 @@ let fun_name_to_pre name = pre_prefix ^ name
 (* XXX wrong *)
 let mk_call_pre_expr e es = (*`App (`PropertyAccess (e, "pre"), es) *)
   let fun_name = `PropertyAccess (e, "fun") in
-  let pre_name = `Binop (`Plus, `String pre_prefix, fun_name) in
+  let pre_name = `App (`Var "_str_conc", [`String pre_prefix; fun_name]) in
   let obj = `App (`Var "_updS", [e; `String "fun"; pre_name]) in
   `App (obj, es)
 
