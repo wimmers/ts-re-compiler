@@ -5,7 +5,7 @@ open BasicTypes
 open Base
 
 let free_vars = LambdaLifting.free_vars
-let internal_fun_names = LambdaLifting.internal_fun_names
+let internal_fun_names = Consts.builtins
 
 (* XXX Move, see also insert_block *)
 let push_block e = function

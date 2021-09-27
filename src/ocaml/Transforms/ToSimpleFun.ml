@@ -2,21 +2,12 @@ open Simple_fun.SimpleFun
 open Tsast
 open Pprint
 open BasicTypes
+open Consts
 open Base
 
 let is_int_float v =
   let c = Float.classify (Float.Parts.fractional (Float.modf v)) in
   Poly.(c = Zero)
-
-module Builtins =
-struct
-  let array_cons = "array_cons"
-  let array_append = "array_append"
-
-  let all_internals = [array_cons; array_append]
-end
-
-let assert_name = "_assert"
 
 let pre_prefix = "P$"
 
@@ -68,7 +59,7 @@ class internals_compiler = object(self)
     else (), List.fold_right (Util.butlast args) ~init:(List.last_exn args)
       ~f:(fun e tail -> 
             let (), e1 = self#expr () () e in
-            `App (`Var Builtins.array_append, [e1; tail]))
+            `App (`Var array_append, [e1; tail]))
   | e -> super#expr () () e
 
 end
@@ -101,9 +92,9 @@ let fun_name_to_pre name = pre_prefix ^ name
 
 (* XXX wrong *)
 let mk_call_pre_expr e es = (*`App (`PropertyAccess (e, "pre"), es) *)
-  let fun_name = `PropertyAccess (e, "fun") in
-  let pre_name = `App (`Var "_str_conc", [`String pre_prefix; fun_name]) in
-  let obj = `App (`Var "_updS", [e; `String "fun"; pre_name]) in
+  let fun_name = `PropertyAccess (e, closure_fun_name) in
+  let pre_name = `App (`Var str_concat_name, [`String pre_prefix; fun_name]) in
+  let obj = `App (`Var updS_name, [e; `String closure_fun_name; pre_name]) in
   `App (obj, es)
 
 (* XXX Move? *)
@@ -146,10 +137,10 @@ let rec expr_cond funs = function
 let translate_updS = function
 | [obj; k; v] -> UpdateS (obj, k, v)
 | args -> raise (Invalid_argument
-    (asprintf "Invalid number of args for _updS: %d" (List.length args)))
+    (asprintf "Invalid number of args for %s: %d" updS_name (List.length args)))
 
 let custom_translations = [
-  "_updS", translate_updS
+  updS_name, translate_updS
 ]
 
 let letify (funs: string list) = List.(
@@ -165,7 +156,7 @@ let rec letify_expr = function
   App (s, map es ~f:letify_expr)
 | `App(e, es) -> AppE (letify_expr e, map es ~f:letify_expr)
 | `ArrayLit (es) -> fold_right es ~init:(Const (Array []))
-    ~f:(fun e tail -> App (Builtins.array_cons, [letify_expr e; tail]))
+    ~f:(fun e tail -> App (array_cons, [letify_expr e; tail]))
 | `ObjLit (params) -> fold params ~init:(Const (Obj []))
     ~f:(fun obj param -> let (s, e) = extract_object_param param in
       UpdateS (obj, Const (String s), letify_expr e)
@@ -212,8 +203,8 @@ let rec letify_expr = function
     let do_params_match = Poly.(vs = params1) in
     if do_params_match then
       UpdateS (
-        Const (Obj ["fun", String s]),
-        Const (String "args"),
+        Const (Obj [closure_fun_name, String s]),
+        Const (String closure_args_name),
         letify_expr (`ArrayLit first_args)
       )
     else
@@ -301,7 +292,7 @@ let letify_preify_fun fun_names (name, params, body) =
 let letify_program ((tab, b): program) =
   let fun_names = List.map tab ~f:(fun (s, _, _) -> s) in
   let pre_names = List.map fun_names ~f:fun_name_to_pre in
-  let fun_names = pre_names @ fun_names @ Builtins.all_internals in
+  let fun_names = pre_names @ fun_names @ all_internals in
   let b =
     b
     |> strip_top_level_undefineds

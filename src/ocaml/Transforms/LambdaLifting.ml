@@ -294,29 +294,12 @@ class lifter(bounds: string list) = object(self)
     | s -> super#stmt name acc s
 end
 
-let internal_fun_names = [
-  "_assert";
-  "_upd";
-  "_updS";
-  "_typeof";
-  "_neg";
-  "undefined"; (* XXX Hack: why is `Undefined identified as a variable? *)
-  "_const2_1";
-  "_const2_2";
-  "_undefined0";
-  "_undefined1";
-  "_id";
-  "_slice";
-  "_map";
-  "_choose"
-]
-
 let lift ?tab:(tab=[]) b =
   let rec iter tab b n =
     if n > 100 then
       raise (Invalid_argument "Seems like we have a termination problem!")
     else
-    let bounds = List.map tab ~f:(fun (s, _, _) -> s) @ internal_fun_names in
+    let bounds = List.map tab ~f:(fun (s, _, _) -> s) @ Consts.builtins in
     let the_lifter = new lifter bounds in
     let (r_opt, b1) = the_lifter#block "#top" None b in (
     match r_opt with
