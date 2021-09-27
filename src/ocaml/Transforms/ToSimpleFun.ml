@@ -130,7 +130,8 @@ let rec expr_cond funs = function
   Option.merge (expr_cond funs e1) (expr_cond funs e2) ~f:mk_and0
 | `PropertyAccess(e, _s) ->
   expr_cond funs e
-| `Arrow _ | `Var _ | `String _ | `Number _ | `Null | `Undefined -> None
+| `Arrow _ | `Var _ | `Number _ | `String _ | `Bool _ | `Null | `Undefined ->
+  None
 | e -> raise
     (Invalid_argument (asprintf "Unsupported expression: %a" pprint_expr e))
 
@@ -171,6 +172,7 @@ let rec letify_expr = function
     Const (Int (Int.of_float f))
   else Const (Float f)
 | `String s -> Const (String s)
+| `Bool b -> Const (Bool b)
 | `Undefined -> Const Undefined
 | `Null -> Const Null
 | `Conditional (eb, e1, e2) ->

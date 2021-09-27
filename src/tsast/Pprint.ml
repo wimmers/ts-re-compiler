@@ -196,6 +196,7 @@ function
 | `Null -> kwd "null"
 | `Undefined -> kwd "undefined"
 | `Number(n) -> kwd (string_of_float n)
+| `Bool(b) -> kwd (string_of_bool b)
 | `Protected(e) ->
     fprintf ppf "@[«%a»@]" pprint_expr e
 | `PropertyAccess(e, s) ->

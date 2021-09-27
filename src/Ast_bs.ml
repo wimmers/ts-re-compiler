@@ -238,6 +238,13 @@ and write_expr js = (
           Atdgen_codec_runtime.Encode.string
         )
     ) x
+    | `Bool x ->
+    Atdgen_codec_runtime.Encode.constr1 "Bool" (
+      Atdgen_codec_runtime.Encode.tuple1
+        (
+          Atdgen_codec_runtime.Encode.bool
+        )
+    ) x
     | `Null ->
     Atdgen_codec_runtime.Encode.constr0 "Null"
     | `Undefined ->
@@ -534,6 +541,18 @@ and read_expr js = (
             Atdgen_codec_runtime.Decode.string
           )
         |> Atdgen_codec_runtime.Decode.map (fun x -> ((`String x) : _))
+        )
+      )
+    ;
+      (
+      "Bool"
+      ,
+        `Decode (
+        Atdgen_codec_runtime.Decode.tuple1
+          (
+            Atdgen_codec_runtime.Decode.bool
+          )
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`Bool x) : _))
         )
       )
     ;

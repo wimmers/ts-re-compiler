@@ -329,6 +329,19 @@ and write_expr = (
             Bi_outbuf.add_char ob ')';
         ) ob x;
         Bi_outbuf.add_char ob '>'
+      | `Bool x ->
+        Bi_outbuf.add_string ob "<\"Bool\":";
+        (
+          fun ob x ->
+            Bi_outbuf.add_char ob '(';
+            (let x = x in
+            (
+              Yojson.Safe.write_bool
+            ) ob x
+            );
+            Bi_outbuf.add_char ob ')';
+        ) ob x;
+        Bi_outbuf.add_char ob '>'
       | `Null -> Bi_outbuf.add_string ob "<\"Null\">"
       | `Undefined -> Bi_outbuf.add_string ob "<\"Undefined\">"
       | `ObjLit x ->
@@ -1142,6 +1155,45 @@ and read_expr = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
               `String x
+            | "Bool" ->
+              Atdgen_runtime.Oj_run.read_until_field_value p lb;
+              let x = (
+                  fun p lb ->
+                    Yojson.Safe.read_space p lb;
+                    let std_tuple = Yojson.Safe.start_any_tuple p lb in
+                    let len = ref 0 in
+                    let end_of_tuple = ref false in
+                    (try
+                      let x0 =
+                        let x =
+                          (
+                            Atdgen_runtime.Oj_run.read_bool
+                          ) p lb
+                        in
+                        incr len;
+                        (try
+                          Yojson.Safe.read_space p lb;
+                          Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+                        with Yojson.End_of_tuple -> end_of_tuple := true);
+                        x
+                      in
+                      if not !end_of_tuple then (
+                        try
+                          while true do
+                            Yojson.Safe.skip_json p lb;
+                            Yojson.Safe.read_space p lb;
+                            Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+                          done
+                        with Yojson.End_of_tuple -> ()
+                      );
+                      (x0)
+                    with Yojson.End_of_tuple ->
+                      Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0 ]);
+                ) p lb
+              in
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_gt p lb;
+              `Bool x
             | "Null" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
@@ -1741,6 +1793,47 @@ and read_expr = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
               `String x
+            | "Bool" ->
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_comma p lb;
+              Yojson.Safe.read_space p lb;
+              let x = (
+                  fun p lb ->
+                    Yojson.Safe.read_space p lb;
+                    let std_tuple = Yojson.Safe.start_any_tuple p lb in
+                    let len = ref 0 in
+                    let end_of_tuple = ref false in
+                    (try
+                      let x0 =
+                        let x =
+                          (
+                            Atdgen_runtime.Oj_run.read_bool
+                          ) p lb
+                        in
+                        incr len;
+                        (try
+                          Yojson.Safe.read_space p lb;
+                          Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+                        with Yojson.End_of_tuple -> end_of_tuple := true);
+                        x
+                      in
+                      if not !end_of_tuple then (
+                        try
+                          while true do
+                            Yojson.Safe.skip_json p lb;
+                            Yojson.Safe.read_space p lb;
+                            Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+                          done
+                        with Yojson.End_of_tuple -> ()
+                      );
+                      (x0)
+                    with Yojson.End_of_tuple ->
+                      Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0 ]);
+                ) p lb
+              in
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_rbr p lb;
+              `Bool x
             | "ObjLit" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;

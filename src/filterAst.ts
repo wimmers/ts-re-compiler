@@ -1,11 +1,15 @@
 import * as ts from "typescript";
 import { stmt, expr, parameter, block, binop } from './tsast/Ast_t.gen';
 import {
-    mkApp, mkNull, mkNumber, mkString, mkUndefined, mkVar, mkVarDecl, mkVarAssignment,
+    mkApp, mkNull, mkNumber, mkString, mkBool, mkUndefined,
+    mkVar, mkVarDecl, mkVarAssignment,
     mkParameter1, mkParameter2,
-    mkFunctionDecl, mkBlock,
-    mkReturn1, mkReturn2, mkObjLit, mkArrayLit, mkSpread, mkIf1, mkIf2, mkWhile, mkBinop, mkArrow,
-    mkObjectBindingPattern, mkArrayBindingPattern, mkNoOp, mkExpression, mkConditional, mkElementAccess, mkPropertyAccess
+    mkBlock, mkFunctionDecl, mkArrow, mkReturn1, mkReturn2,
+    mkIf1, mkIf2, mkWhile,
+    mkBinop, mkObjLit, mkArrayLit, mkSpread,
+    mkObjectBindingPattern, mkArrayBindingPattern,
+    mkElementAccess, mkPropertyAccess,
+    mkNoOp, mkExpression, mkConditional
 } from './tsast/Ast.gen';
 
 const babelFills = [
@@ -101,6 +105,10 @@ export function filter(sourceFile: ts.SourceFile): block {
             case ts.SyntaxKind.StringLiteral:
                 return filterStringLiteral(node as ts.StringLiteral)
 
+            case ts.SyntaxKind.TrueKeyword:
+            case ts.SyntaxKind.FalseKeyword:
+                return filterBooleanLiteral(node as ts.BooleanLiteral)
+
             case ts.SyntaxKind.ObjectLiteralExpression:
                 return filterObjectLiteralExpression(node as ts.ObjectLiteralExpression)
 
@@ -143,6 +151,10 @@ export function filter(sourceFile: ts.SourceFile): block {
 
     function filterStringLiteral(node: ts.StringLiteral): expr {
         return mkString(node.text)
+    }
+
+    function filterBooleanLiteral(node: ts.BooleanLiteral): expr {
+        return mkBool(node.getText() === "true")
     }
 
     function filterElementAccessExpression(node: ts.ElementAccessExpression): expr {

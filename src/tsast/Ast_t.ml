@@ -15,6 +15,7 @@ and expr = [
   | `ElementAccess of (expr * expr)
   | `Number of (float)
   | `String of (string)
+  | `Bool of (bool)
   | `Null
   | `Undefined
   | `ObjLit of (parameter list)

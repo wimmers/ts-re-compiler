@@ -18,6 +18,7 @@ export mkVar: string => Ast_t.expr = s => #Var(s)
 export mkApp: (_, _) => Ast_t.expr = (e, xs) => #App(e, Array.to_list(xs))
 export mkNumber: _ => Ast_t.expr = x => #Number(x)
 export mkString: _ => Ast_t.expr = x => #String(x)
+export mkBool: _ => Ast_t.expr = x => #Bool(x)
 export mkUndefined: Ast_t.expr = #Undefined
 export mkNull: Ast_t.expr = #Null
 export mkObjLit: _ => Ast_t.expr = xs => #ObjLit(Array.to_list(xs))
