@@ -135,12 +135,21 @@ let rec expr_cond funs = function
 | e -> raise
     (Invalid_argument (asprintf "Unsupported expression: %a" pprint_expr e))
 
+let invalid_num_args_exn name args =
+  Invalid_argument
+    (asprintf "Invalid number of args for %s: %d" name (List.length args))
+
+(* XXX Hack, this assumes [k] is int. *)
+let translate_upd = function
+| [arr; k; v] -> UpdateI (arr, k, v)
+| args -> raise (invalid_num_args_exn upd_name args)
+
 let translate_updS = function
 | [obj; k; v] -> UpdateS (obj, k, v)
-| args -> raise (Invalid_argument
-    (asprintf "Invalid number of args for %s: %d" updS_name (List.length args)))
+| args -> raise (invalid_num_args_exn updS_name args)
 
 let custom_translations = [
+  upd_name, translate_upd;
   updS_name, translate_updS
 ]
 
