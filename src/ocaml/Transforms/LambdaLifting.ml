@@ -299,7 +299,7 @@ let lift ?tab:(tab=[]) b =
     if n > 100 then
       raise (Invalid_argument "Seems like we have a termination problem!")
     else
-    let bounds = List.map tab ~f:(fun (s, _, _) -> s) @ Consts.builtins in
+    let bounds = List.map tab ~f:(fun (s, _, _) -> s) @ Consts.all_builtins in
     let the_lifter = new lifter bounds in
     let (r_opt, b1) = the_lifter#block "#top" None b in (
     match r_opt with

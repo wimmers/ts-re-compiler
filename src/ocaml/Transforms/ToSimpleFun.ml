@@ -113,12 +113,9 @@ let rec expr_cond funs = function
   let cond = (match e with
     | `Var name when List.mem funs name ~equal:String.equal ->
       let pre_name = fun_name_to_pre name in
-      `App (`Var pre_name, es)
-    | _ -> mk_call_pre_expr e es
+    | `Var name when List.mem Consts.hypotheticals name ~equal:String.equal ->
   ) in
-  let conds = List.filter_map ~f:(expr_cond funs) es in
-  let conj = List.fold conds ~init:cond ~f:mk_and0 in
-  Some conj
+  List.reduce conds ~f:mk_and0
 | `ObjLit(params) ->
   let conds = List.filter_map params ~f:(fun p ->
     extract_object_param p |> snd |> expr_cond funs) in
@@ -301,9 +298,9 @@ let letify_preify_fun fun_names (name, params, body) =
   [func; pre]
 
 let letify_program ((tab, b): program) =
-  let fun_names = List.map tab ~f:(fun (s, _, _) -> s) in
+  let fun_names = List.map tab ~f:(fun (s, _, _) -> s) @ all_internals in
   let pre_names = List.map fun_names ~f:fun_name_to_pre in
-  let fun_names = pre_names @ fun_names @ all_internals in
+  let fun_names = pre_names @ fun_names in
   let b =
     b
     |> strip_top_level_undefineds
