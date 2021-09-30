@@ -113,8 +113,12 @@ let rec expr_cond funs = function
   let cond = (match e with
     | `Var name when List.mem funs name ~equal:String.equal ->
       let pre_name = fun_name_to_pre name in
+      Some (`App (`Var pre_name, es))
     | `Var name when List.mem Consts.hypotheticals name ~equal:String.equal ->
+      None (* XXX hack, do not assign precond to hypotheticals *)
+    | _ -> Some (mk_call_pre_expr e es)
   ) in
+  let conds = cond :: List.map ~f:(expr_cond funs) es |> List.filter_opt in
   List.reduce conds ~f:mk_and0
 | `ObjLit(params) ->
   let conds = List.filter_map params ~f:(fun p ->
@@ -145,9 +149,16 @@ let translate_updS = function
 | [obj; k; v] -> UpdateS (obj, k, v)
 | args -> raise (invalid_num_args_exn updS_name args)
 
+let translate_slice = function
+| [arr; Const (Int n)] when Int.equal n 1 -> App (arr_tl_name, [arr])
+| [_obj; _k] -> raise (Invalid_argument
+    (asprintf "%s is only supported as array tail" slice_name))
+| args -> raise (invalid_num_args_exn slice_name args)
+
 let custom_translations = [
   upd_name, translate_upd;
-  updS_name, translate_updS
+  updS_name, translate_updS;
+  slice_name, translate_slice;
 ]
 
 let letify (funs: string list) = List.(
@@ -281,7 +292,6 @@ and preify_block = function
 in letify_block, fun b -> preify_block b |> get_bool)
 
 let letify_preify_fun fun_names (name, params, body) =
-  let fun_names = fun_names in
   let letify, preify = letify fun_names in
   let body0 = body |> compile_internals in
   let body = body0 |> letify in
