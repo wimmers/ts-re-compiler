@@ -37,6 +37,21 @@ const prop_replacements = {
   "slice": "_slice"
 }
 
+// Definitions of Babel fills that we will simply delete.
+const functions_to_delete = [
+  "_slicedToArray",
+  "_iterableToArrayLimit",
+  "_toArray",
+  "_nonIterableRest",
+  "_unsupportedIterableToArray",
+  "_arrayLikeToArray",
+  "_iterableToArray",
+  "_arrayWithHoles",
+  "_toConsumableArray",
+  "_nonIterableSpread",
+  "_arrayWithoutHoles",
+]
+
 module.exports = function({types: t}) {
     const visitor = {
       MemberExpression(path) {
@@ -66,7 +81,13 @@ module.exports = function({types: t}) {
             t.identifier(replacement), args)
           path.replaceWith(newCallExpression)
         }
-      }
+      },
+      FunctionDeclaration(path) {
+        const node = path.node
+        if (functions_to_delete.includes(node.id.name)) {
+          path.remove()
+        }
+      },
     }
     return {
         visitor
