@@ -104,6 +104,7 @@ class free_vars_computer = object(self)
   | `Var (s) as e ->
     let frees1 = if List.mem bounds s ~equal:String.equal then frees else s :: frees in
     (frees1, e)
+  | `Protected(e) -> super#expr bounds frees e
   | e -> super#expr bounds frees e
 
   method! func bounds frees params b =
