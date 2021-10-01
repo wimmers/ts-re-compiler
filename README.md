@@ -88,6 +88,7 @@ However, the `.merlin` file is probably needed to get all features for ReScript 
   - `babel-transform-update-expression`
   - `babel-transform-object-spread`
   - `babel-transform-unary-expression`
+  - `babel-transform-delete`
   - `babel-transform-array-push`
   - `babel-transform-property-assignment`
   - `babel-rename`

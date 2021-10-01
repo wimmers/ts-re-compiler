@@ -7,14 +7,14 @@
 const obj_prop_replacements = {
   "console": {
     "assert": "_assert",
-    "log": "_undefined1"
+    "log": null
   },
   "Math": {
     "random": "_undefined0",
     "floor":  "_undefined1"
   },
   "Object": {
-    "assign": "_const_2_2" // Assumes `Object.assign({}, obj)` is copy
+    "assign": "_const2_2" // Assumes `Object.assign({}, obj)` is copy
   }
 }
 
@@ -50,6 +50,7 @@ const functions_to_delete = [
   "_toConsumableArray",
   "_nonIterableSpread",
   "_arrayWithoutHoles",
+  "choose"
 ]
 
 module.exports = function({types: t}) {
@@ -62,8 +63,14 @@ module.exports = function({types: t}) {
         const obj = obj_prop_replacements[object.name]
         if (!obj) return
         const replacement = obj[property.name]
-        if (!replacement) return
-        path.replaceWith(t.identifier(replacement))
+        if (replacement === undefined) return
+        const gparentPath = path.parentPath.parentPath
+        if (t.isExpressionStatement(gparentPath.node) && replacement === null) {
+          gparentPath.remove()
+        }
+        else {
+          path.replaceWith(t.identifier(replacement))
+        }
       },
       CallExpression(path) {
         const callee = path.node.callee
