@@ -58,6 +58,9 @@ let () =
   let p = DisambiguateFunctions.disambigute_funs p in
   printf "\nProgram after disambiguating functions with optional parameters:\n\n";
   print_program p;
+  let p = VariableDisambiguater.disambiguate_variable_names p in
+  printf "\nProgram after disambiguating variable names:\n\n";
+  print_program p;
   (* Final phase: turn blocks into iterated lets, ad-hoc conversion of expressions *)
   let p = BasicTransformers.strip_let p |> BasicTransformers.denop_program in
   let p = ToSimpleFun.letify_program p in
